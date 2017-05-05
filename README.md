@@ -1,1 +1,1 @@
-自己编写实现一个简单的STL
+自己编写实现一个简单的STL, 主要思想参考侯捷老师的《STL源码剖析》,容器的接口参考http://en.cppreference.com/w/
