@@ -30,11 +30,11 @@ namespace arsSTL {
 		vector(size_type n, const T& value, const Allocator& = Allocator());
 		template <class InputIterator>
 		vector(InputIterator first, InputIterator last);
-		//vector(const vector<T, Allocator>& x);
-		//vector(vector&&);
-		//vector(const vector&, const Allocator&);
-		//vector(vector&&, const Allocator&);
-		//vector(initializer_list<T>, const Allocator& = Allocator());
+		vector(const vector<T, Allocator>& x);
+		vector(vector&&);
+		vector(const vector&, const Allocator&);
+		vector(vector&&, const Allocator&);
+		vector(std::initializer_list<T>, const Allocator& = Allocator());
 
 		//~vector();
 		//vector<T, Allocator>& operator=(const vector<T, Allocator>& x);
@@ -49,8 +49,8 @@ namespace arsSTL {
 		//// iterators:
 		iterator                begin() noexcept { return element; }
 		const_iterator          begin() const noexcept { return element; }
-		iterator                end() noexcept { return first_free; };
-		const_iterator          end() const noexcept { return first_free };
+		iterator                end() noexcept { return first_free;}
+		const_iterator          end() const noexcept { return first_free; }
 
 		//reverse_iterator        rbegin() noexcept;
 		//const_reverse_iterator  rbegin() const noexcept;
@@ -120,7 +120,7 @@ namespace arsSTL {
 	};
 
 	template<typename T,typename Allocator>
-	vector<T, Allocator>::vector(const Allocator& a) :alloc{ a }, element(0), first_free(0), cap(0){}
+	vector<T, Allocator>::vector(const Allocator& a) :alloc{ a }, element(nullptr), first_free(nullptr), cap(nullptr){}
      
 	template<typename T, typename Allocator>
 	vector<T, Allocator>::vector(size_type n) {
@@ -161,7 +161,34 @@ namespace arsSTL {
 		first_free = cap = tem;
 	}
 
+	template<typename T,typename Allocator>
+	vector<T, Allocator>::vector(const vector<T, Allocator>& x){
+		element = alloc.allocate(x.size());
+		cap = first_free = uninitialized_copy(x.begin(), x.end(), element);
+	}
 
+	template<typename T, typename Allocator>
+	vector<T, Allocator>::vector(vector&& x):element(x.element),first_free(x.first_free),cap(x.cap){
+		x.first_free = x.element = x.cap = nullptr;
+	}
+
+	template<typename T, typename Allocator>
+	vector<T, Allocator>::vector(const vector& x, const Allocator& a) : alloc(a) {
+		element = alloc.allocate(x.size());
+		cap = first_free = uninitialized_copy(x.begin(), x.end(), element);
+	}
+
+	template<typename T, typename Allocator>
+	vector<T, Allocator>::vector(vector&& x, const Allocator& a) :alloc(a),element(x.element),first_free(x.first_free),cap(x.cap) {
+		x.element = x.cap = x.first_free = nullptr;
+
+	}
+
+	template<typename T, typename Allocator>
+	vector<T, Allocator>::vector(std::initializer_list<T> x, const Allocator& a):alloc(a){
+		element = alloc.allocate(x.size());
+		first_free = cap = uninitialized_copy(x.begin(), x.end(), element);
+	}
 }
 
 
