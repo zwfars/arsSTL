@@ -2,8 +2,7 @@
 #define VECTOR_H
 
 #include<memory>
-#include"iterator.h"
-#include <type_traits>   
+#include"iterator.h" 
 #include<allocators>
 
 namespace arsSTL {
@@ -19,7 +18,7 @@ namespace arsSTL {
 		using value_type = T;
 		using allocator_type = Allocator;
 		using pointer = T*;
-		using const_pointer = T* const;
+		using const_pointer = const T*;
 
 		/*to do until iterator*/
 		//using reverse_iterator = reverse_iterator<iterator>; 
@@ -36,15 +35,15 @@ namespace arsSTL {
 		vector(vector&&, const Allocator&);
 		vector(std::initializer_list<T>, const Allocator& = Allocator());
 
-		//~vector();
-		//vector<T, Allocator>& operator=(const vector<T, Allocator>& x);
-		//vector<T, Allocator>& operator=(vector<T, Allocator>&& x);
-		//vector& operator=(initializer_list<T>);
-		//template <class InputIterator>
-		//void assign(InputIterator first, InputIterator last);
-		//void assign(size_type n, const T& t);
-		//void assign(initializer_list<T>);
-		//allocator_type get_allocator() const noexcept;
+		~vector();
+		vector<T, Allocator>& operator=(const vector<T, Allocator>& x);
+		vector<T, Allocator>& operator=(vector<T, Allocator>&& x);
+		vector& operator=(std::initializer_list<T>);
+		template <class InputIterator>
+		void assign(InputIterator first, InputIterator last);
+		void assign(size_type n, const T& t);
+		void assign(std::initializer_list<T>);
+		allocator_type get_allocator() const noexcept { return alloc; }
 
 		//// iterators:
 		iterator                begin() noexcept { return element; }
@@ -101,16 +100,26 @@ namespace arsSTL {
 		//	InputIterator last);
 		//iterator insert(const_iterator position, initializer_list<T>);
 	
-		//iterator erase(const_iterator position);
-		//iterator erase(const_iterator first, const_iterator last);
-		//void     swap(vector<T, Allocator>&);
-		//void     clear() noexcept;
+		iterator erase(const_iterator position);
+		iterator erase(const_iterator first, const_iterator last);
+		void     swap(vector<T, Allocator>&);
+		void     clear() noexcept {erase(begin(),end())};
+
+    // == and !=
+	public:
+		template<class T, class Allocator>
+		friend bool operator == (const vector<T, Allocator>& , const vector<T, Allocator>& );
+		template<class T, class Allocator>
+		friend bool operator != (const vector<T, Allocator>& , const vector<T, Allocator>& );
 
 		// some helper functions
+	private:
 		template <class InputIterator>
-		void auxvec(InputIterator first, InputIterator last, std::false_type);
+		void vec_aux(InputIterator first, InputIterator last, std::false_type);
 		template <class InputIterator>
-		void auxvec(InputIterator first, InputIterator last, std::true_type);
+		void vec_aux(InputIterator first, InputIterator last, std::true_type);
+		void vec_free();
+
 
 	private:
 		iterator element;
@@ -119,12 +128,14 @@ namespace arsSTL {
 		Allocator alloc;
 	};
 
+	//construct function
 	template<typename T,typename Allocator>
 	vector<T, Allocator>::vector(const Allocator& a) :alloc{ a }, element(nullptr), first_free(nullptr), cap(nullptr){}
      
 	template<typename T, typename Allocator>
 	vector<T, Allocator>::vector(size_type n) {
 		element = alloc.allocate(n);
+		uninitialized_fill_n(element, n, T());
 		cap = first_free = element + n;
 	}
 	
@@ -140,25 +151,7 @@ namespace arsSTL {
 	template<typename T,typename Allocator>
 	template <class InputIterator>
 	vector<T, Allocator>::vector(InputIterator first, InputIterator last) {
-		auxvec(first, last, typename std::is_integral<InputIterator>::type());
-	}
-
-	template<typename T, typename Allocator>
-	template <class InputIterator>
-	void vector<T, Allocator>::auxvec(InputIterator first, InputIterator last, std::false_type) {
-		element = alloc.allocate(last - first);
-		cap = first_free = uninitialized_copy(first, last, element);
-		
-	}
-
-	template<typename T, typename Allocator>
-	template <class InputIterator>
-	void vector<T, Allocator>::auxvec(InputIterator first, InputIterator last, std::true_type) {
-		element = alloc.allocate(first);
-		auto tem = element;
-		for (int i = 0; i != first; i++)
-			alloc.construct(tem++, last);
-		first_free = cap = tem;
+		vec_aux(first, last, typename std::is_integral<InputIterator>::type());
 	}
 
 	template<typename T,typename Allocator>
@@ -189,6 +182,152 @@ namespace arsSTL {
 		element = alloc.allocate(x.size());
 		first_free = cap = uninitialized_copy(x.begin(), x.end(), element);
 	}
+
+
+	//deconstruct funciton
+	template<typename T, typename Allocator>
+	vector<T, Allocator>::~vector() {
+		vec_free();
+	}
+
+
+
+	// operator=
+	template<typename T,typename Allocator>
+	vector<T, Allocator>& vector<T, Allocator>::operator=(const vector<T, Allocator>& x) {
+		auto tem = alloc.allocate(x.size());
+		auto temcap = uninitialized_copy(x.begin(), x.end(), tem);
+		vec_free();
+		element = tem;
+		cap = first_free = element = temcap;
+		return *this
+	}
+
+	template<typename T, typename Allocator>
+	vector<T, Allocator>& vector<T, Allocator>:: operator=(vector<T, Allocator>&& x) {
+		auto temelement = x.element;
+		auto temfirst_free = x.first_free;
+		auto temcap = x.cap;
+		x.first_free = x.element = x.cap = nullptr;
+		vec_free();
+		element = temelement;
+		first_free = temfirst_free;
+		cap = temcap;
+		return *this;
+	}
+
+	template<typename T, typename Allocator>
+	vector<T,Allocator>& vector<T, Allocator>::operator=(std::initializer_list<T> x) {
+		vec_free();
+		element = alloc.allocate(x.size());
+		first_free = cap = uninitialized_copy(x.begin(), x.end(), element);
+		return *this;
+	}
+
+
+	// assign function
+	template<typename T,typename Allocator>
+	template <class InputIterator>
+	void vector<T, Allocator>::assign(InputIterator first, InputIterator last) {
+		vec_free();
+		vec_aux(first, last,typename std::is_integral<InputIterator>::type());
+		                    
+	}
+
+	template<typename T, typename Allocator>
+	void vector<T, Allocator>::assign(size_type n, const T& t) {
+		element = alloc.allocate(n);
+		uninitialized_fill_n(element, n, t);
+		cap = first_free = element + n;
+	}
+
+	template<typename T, typename Allocator>
+	void vector<T, Allocator>::assign(std::initializer_list<T> x) {
+		vec_free();
+		element = alloc.allocate(x.size());
+		first_free = cap = uninitialized_copy(x.begin(), x.end(), element);
+	}
+
+
+	// erase function
+	template<typename T, typename Allocator>
+	typename vector<T,Allocator>::iterator vector<T,Allocator>::erase(const_iterator position){
+		iterator tem = (iterator)position;
+		uninitialized_copy(tem, first_free, tem);
+		--first_free;
+		alloc.destroy(first_free);
+		return tem;
+	}
+	template<typename T,typename Allocator>
+	typename vector<T, Allocator>::iterator vector<T, Allocator>::erase(const_iterator first, const_iterator last) {
+		iterator temfirst = (iterator) first;
+		iterator temlast = (iterator)last;
+		iterator tem = uninitialized_copy(temlast, first_free,temfirst);
+		for (auto p = end(); p != temfirst;)
+			alloc.destroy(--p);
+		first_free = tem;
+		return temfirst;
+	}
+
+	//swap function
+	template<typename T, typename Allocator>
+	void vector<T, Allocator>::swap(vector<T, Allocator>& x) {
+		std::swap(first_free, x.first_free);
+		std::swap(element, x.element);
+		std::swap(cap, x.cap);
+	}
+
+
+
+	// friend functions 
+	template<class T, class Allocator>
+	friend bool operator == (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
+		if (x1.size() != x2.size())
+			return false;
+		auto tem1 = x1.begin();
+		auto tem2 = x2.begin();
+		while (tem1 != x1.end()) {
+			if (*tem1 != *tem2)
+				return false;
+			tem1++;
+			tem2++;
+		}
+		return true;
+	}
+
+	template<class T, class Allocator>
+	friend bool operator != (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
+		return !(x1 == x2);
+	}
+
+
+
+	// vector auxiliary function 
+	template<typename T, typename Allocator>
+	template <class InputIterator>
+	void vector<T, Allocator>::vec_aux(InputIterator first, InputIterator last, std::false_type) {
+		element = alloc.allocate(last - first);
+		cap = first_free = uninitialized_copy(first, last, element);
+
+	}
+
+	template<typename T, typename Allocator>
+	template <class InputIterator>
+	void vector<T, Allocator>::vec_aux(InputIterator first, InputIterator last, std::true_type) {
+		element = alloc.allocate(first);
+		uninitialized_fill_n(element, first, last);
+		first_free = cap = element + first;
+	}
+
+	template<typename T,typename Allocator>
+	void vector<T, Allocator>::vec_free() {
+		if (element) {
+			for (auto p = first_free; p != element;)
+				alloc.destroy(--p);
+			alloc.deallocate(element, cap - element);
+		}
+	}
+
 }
 
 
