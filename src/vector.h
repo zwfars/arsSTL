@@ -86,14 +86,14 @@ namespace arsSTL {
 		//const T* data() const noexcept;
 	
 		//// modifiers:
-		//template <class... Args> void emplace_back(Args&&... args);
-		//void push_back(const T& x);
-		//void push_back(T&& x);
+		template <class... Args> void emplace_back(Args&&... args) { emp_aux(end(), (args)...); }
+		void push_back(const T& x) { emp_aux(end(), x); }
+		void push_back(T&& x) { emp_aux(end(), std::forward<T&&>(x)); }
 		//void pop_back();
 	
-		//template <class... Args> iterator emplace(const_iterator position, Args&&... args);
-		//iterator insert(const_iterator position, const T& x);
-		//iterator insert(const_iterator position, T&& x);
+		template <class... Args> iterator emplace(const_iterator position, Args&&... args);
+		iterator insert(const_iterator position, const T& x) { emplace(position, x); }
+		iterator insert(const_iterator position, T&& x) { emplace(position, std::forward<T&&>(x)); }
 		//iterator insert(const_iterator position, size_type n, const T& x);
 		//template <class InputIterator>
 		//iterator insert(const_iterator position, InputIterator first,
@@ -119,6 +119,9 @@ namespace arsSTL {
 		template <class InputIterator>
 		void vec_aux(InputIterator first, InputIterator last, std::true_type);
 		void vec_free();
+		template <class... Args>
+		void emp_aux(iterator tempos, Args&&... args);
+		//void ins_aux(iterator, const T&);
 
 
 	private:
@@ -278,10 +281,21 @@ namespace arsSTL {
 	}
 
 
+	//emplace and insert function
+	template<typename T,typename Allocator>
+	template <class... Args> 
+	typename vector<T, Allocator>::iterator vector<T, Allocator>::emplace(const_iterator position, Args&&... args) {
+		iterator tempos = (iterator)position;
+		emp_aux(tempos, (args)...);
+		return tempos;
+	}
+
+
+
 
 	// friend functions 
 	template<class T, class Allocator>
-	friend bool operator == (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
+	bool operator == (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
 		if (x1.size() != x2.size())
 			return false;
 		auto tem1 = x1.begin();
@@ -296,7 +310,7 @@ namespace arsSTL {
 	}
 
 	template<class T, class Allocator>
-	friend bool operator != (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
+	bool operator != (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
 		return !(x1 == x2);
 	}
 
@@ -325,6 +339,27 @@ namespace arsSTL {
 			for (auto p = first_free; p != element;)
 				alloc.destroy(--p);
 			alloc.deallocate(element, cap - element);
+		}
+	}
+
+	template<typename T, typename Allocator>
+	template <class... Args>
+	void vector<T, Allocator>::emp_aux(iterator tempos, Args&&... args) {
+		if (end() < cap) {
+			uninitialized_copy(tempos, end(), tempos + 1);
+			alloc.construct(tempos, std::forward<Args>(args)...);
+			first_free++;
+		}
+		else {
+			size_type temsize = size() ? 2 * size() : 1;
+			iterator temelement = alloc.allocate(temsize);
+			iterator cur = uninitialized_copy(element, tempos, temelement);
+			alloc.construct(cur, std::forward<Args>(args)...);
+			iterator temfirst_free = uninitialized_copy(tempos, end(), cur + 1);
+			vec_free();
+			element = temelement;
+			first_free = temfirst_free;
+			cap = temsize + element;
 		}
 	}
 
