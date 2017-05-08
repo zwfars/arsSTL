@@ -64,8 +64,8 @@ namespace arsSTL {
 		//// capacity:
 		size_type size() const noexcept { return first_free - element; }
 		size_type max_size() const noexcept { return size_t(-1) / sizeof(T); };
-		//void      resize(size_type sz);
-		//void      resize(size_type sz, const T& c);
+		void      resize(size_type sz);
+		void      resize(size_type sz, const T& c);
 		size_type capacity() const noexcept { return cap - element; };
 		bool      empty() const noexcept { return element == first_free; }
 		//void      reserve(size_type n);
@@ -122,6 +122,7 @@ namespace arsSTL {
 		void emp_aux(Args&&... args);
 		void rotate_aux(iterator low, iterator mid, iterator high);
 		void reverse_aux(iterator low, iterator high);
+		void res_aux(size_type sz, const T&);
 		
 
 		template <class InputIterator>
@@ -327,6 +328,29 @@ namespace arsSTL {
 	}                                        
 
 
+	//resize 
+	template<typename T,typename Allocator>
+	void vector<T, Allocator>::resize(size_type sz) {
+		size_type temsz = size();
+		size_type temcap = capacity();
+		if (sz <= temsz) {
+			for (int i = 0; i < temsz - sz; i++)
+				alloc.destroy(first_free--);
+		}
+		res_aux(sz, T());
+	}
+
+	template<typename T, typename Allocator>
+	void vector<T, Allocator>::resize(size_type sz,const T& x) {
+		size_type temsz = size();
+		if (sz <= temsz) {
+			uninitialized_fill_n(element, sz, x);
+			for (int i = 0; i < temsz - sz; i++)
+				alloc.destroy(first_free--);
+		}
+		res_aux(sz, x);
+	}
+
 
 
 	// friend functions 
@@ -425,8 +449,7 @@ namespace arsSTL {
 			first_free += first;
 		}
 		else {
-			size_type len = size() > first ? size() : first;
-			len += size();
+			size_type len = size() + first;
 			iterator temelement = alloc.allocate(len);
 			iterator cur = uninitialized_copy(begin(), end(), temelement);
 			uninitialized_fill_n(cur, first, last);
@@ -452,8 +475,7 @@ namespace arsSTL {
 			first_free += n;
 		}
 		else {
-			size_type len = size() > off ? size() : off;
-			len += size();
+			size_type len = size() + n;
 			iterator temelement = alloc.allocate(len);
 			iterator cur = uninitialized_copy(begin(), end(), temelement);
 			uninitialized_copy(first, last, cur);
@@ -468,6 +490,25 @@ namespace arsSTL {
 
 			
 	}
+	
+	template<typename T,typename Allcator>
+	void vector<T, Allcator>::res_aux(size_type sz, const T& x) {
+		size_type temsz = size();
+		size_type temcap = capacity();
+		if (sz > temsz && sz <= temcap) {
+			for (int i = 0; i < sz - temsz; i++)
+				alloc.construct(first_free++, x);
+		}
+		else if(sz>temcap){
+			iterator temelement = alloc.allocate(sz);
+			iterator cur = uninitialized_copy(begin(), end(), temelement);
+			uninitialized_fill_n(cur, sz - size(),x);
+			vec_free();
+			element = temelement;
+			cap = first_free = sz + temelement;
+		}
+	}
+
 }
 
 
