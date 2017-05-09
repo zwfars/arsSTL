@@ -2,8 +2,8 @@
 #define VECTOR_H
 
 #include<memory>
-#include"iterator.h" 
-#include<allocators>
+#include"iterator.h"
+#include"reverse_iterator.h"
 
 namespace arsSTL {
 	template <class T, class Allocator = std::allocator<T> >
@@ -19,10 +19,10 @@ namespace arsSTL {
 		using allocator_type = Allocator;
 		using pointer = T*;
 		using const_pointer = const T*;
-
-		/*to do until iterator*/
-		//using reverse_iterator = reverse_iterator<iterator>; 
-		//using const_reverse_iterator = reverse_iterator<const_iterator>;
+		using reverse_iterator = arsSTL::reverse_iterator<iterator>;
+		/*if namespace arsSTL is omitted, revers_iterator will have trouble for using reverse_iterator = arsSTL::reverse_iterator<iterator>;*/
+		using const_reverse_iterator = arsSTL::reverse_iterator<const_iterator>;  
+		
 	public:
 		explicit vector(const Allocator& = Allocator());
 		explicit vector(size_type n);
@@ -51,14 +51,14 @@ namespace arsSTL {
 		iterator                end() noexcept { return first_free; }
 		const_iterator          end() const noexcept { return first_free; }
 
-		//reverse_iterator        rbegin() noexcept;
+		reverse_iterator        rbegin() noexcept { reverse_iterator a; return reverse_iterator(first_free - 1); }
 		//const_reverse_iterator  rbegin() const noexcept;
 		//reverse_iterator        rend() noexcept;
 		//const_reverse_iterator  rend() const noexcept;
 
-		const_iterator          cbegin() noexcept { return element; }
-		const_iterator          cend() noexcept { return first_free; }
-		//const_reverse_iterator  crbegin() const noexcept;
+		//const_iterator          cbegin() noexcept { return element; }
+		//const_iterator          cend() noexcept { return first_free; }
+		//const_reverse_iterator  crbegin() const noexcept { return const_reverse_iterator(first_free - 1); }
 		//const_reverse_iterator  crend() const noexcept;
 
 		//// capacity:
