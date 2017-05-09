@@ -68,8 +68,8 @@ namespace arsSTL {
 		void      resize(size_type sz, const T& c);
 		size_type capacity() const noexcept { return cap - element; };
 		bool      empty() const noexcept { return element == first_free; }
-		//void      reserve(size_type n);
-		//void      shrink_to_fit();
+		void      reserve(size_type n);
+		void      shrink_to_fit();
 
 		// element access:
 		reference       operator[](size_type n) { return *(begin() + n); }
@@ -82,8 +82,8 @@ namespace arsSTL {
 		const_reference back() const { return *(cend() - 1); }
 
 		////data access
-		//T*       data() noexcept;
-		//const T* data() const noexcept;
+		T*       data() noexcept { return begin(); }
+		const T* data() const noexcept { return cbegin(); }
 
 		//// modifiers:
 		template <class... Args> void emplace_back(Args&&... args) { emp_aux((args)...); }
@@ -352,6 +352,32 @@ namespace arsSTL {
 	}
 
 
+	//reserve and shrink
+	template<typename T,typename Allocator>
+	void vector<T, Allocator>::reserve(size_type n) {
+		if (n > capacity()) {
+			iterator temelement = alloc.allocate(n);
+			uninitialized_copy(begin(), end(), temelement);
+			vec_free();
+			element = temelement;
+			first_free = cap = temelement + n;
+		}
+	}
+	
+	template<typename T,typename Allocator>
+	void vector<T, Allocator>::shrink_to_fit() {
+		//does not permit partial deallocation of memory.
+		size_type sz = size();
+		if (capacity() > sz) {
+			iterator temelement = alloc.allocate(size());
+			uninitialized_copy(begin(), end(), temelement);
+			vec_free();
+			element = temelement;
+			first_free = cap = element + sz;
+		}
+	}
+
+
 
 	// friend functions 
 	template<class T, class Allocator>
@@ -401,7 +427,6 @@ namespace arsSTL {
 			alloc.deallocate(element, cap - element);
 		}
 	}
-
 
 	// push the element in the back;
 	template<typename T, typename Allocator>
@@ -508,7 +533,6 @@ namespace arsSTL {
 			cap = first_free = sz + temelement;
 		}
 	}
-
 }
 
 
