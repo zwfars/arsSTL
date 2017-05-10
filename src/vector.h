@@ -20,7 +20,8 @@ namespace arsSTL {
 		using pointer = T*;
 		using const_pointer = const T*;
 		using reverse_iterator = arsSTL::reverse_iterator<iterator>;
-		/*if namespace arsSTL is omitted, revers_iterator will have trouble for using reverse_iterator = arsSTL::reverse_iterator<iterator>;*/
+		/*if namespace arsSTL is omitted, revers_iterator will have trouble 
+		for using reverse_iterator = arsSTL::reverse_iterator<iterator>;*/
 		using const_reverse_iterator = arsSTL::reverse_iterator<const_iterator>;  
 		
 	public:
@@ -51,15 +52,15 @@ namespace arsSTL {
 		iterator                end() noexcept { return first_free; }
 		const_iterator          end() const noexcept { return first_free; }
 
-		reverse_iterator        rbegin() noexcept { reverse_iterator a; return reverse_iterator(first_free - 1); }
-		//const_reverse_iterator  rbegin() const noexcept;
-		//reverse_iterator        rend() noexcept;
-		//const_reverse_iterator  rend() const noexcept;
+		reverse_iterator        rbegin() noexcept { return reverse_iterator(end()); }
+		const_reverse_iterator  rbegin() const noexcept { return const_reverse_iterator(end());}
+		reverse_iterator        rend() noexcept { return reverse_iterator(begin()); }
+		const_reverse_iterator  rend() const noexcept { return const_reverse_iterator(begin()); }
 
-		//const_iterator          cbegin() noexcept { return element; }
-		//const_iterator          cend() noexcept { return first_free; }
-		//const_reverse_iterator  crbegin() const noexcept { return const_reverse_iterator(first_free - 1); }
-		//const_reverse_iterator  crend() const noexcept;
+		const_iterator          cbegin() noexcept { return begin(); }
+		const_iterator          cend() noexcept { return end(); }
+		const_reverse_iterator  crbegin() const noexcept { return rbegin(); }
+		const_reverse_iterator  crend() const noexcept { return rend(); }
 
 		//// capacity:
 		size_type size() const noexcept { return first_free - element; }
@@ -533,6 +534,9 @@ namespace arsSTL {
 			cap = first_free = sz + temelement;
 		}
 	}
+
+
+	/*vector<bool> to do...*/
 }
 
 
