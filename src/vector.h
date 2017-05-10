@@ -536,7 +536,7 @@ namespace arsSTL {
 	}
 
 
-	/*vector<bool> to do...*/
+	/*vector<bool> future work...*/
 }
 
 
