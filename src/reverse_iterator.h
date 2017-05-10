@@ -19,10 +19,13 @@ namespace arsSTL {
 	public:
 		reverse_iterator():current(nullptr) {}
 		explicit reverse_iterator(Iterator x) : current(x) {}
-		template <class U> reverse_iterator(const reverse_iterator<U>& u): current((Iterator)u) {}
-		template <class U> reverse_iterator& operator=(const reverse_iterator<U>& u) { current = (Iterator)u; return *this; }
-		Iterator base() const { return current + 1; }
-		reference operator*() const { return *current; }
+		template <class U> reverse_iterator(const reverse_iterator<U>& u): current(u.base()) {}
+		template <class U> reverse_iterator& operator=(const reverse_iterator<U>& u) { current = u.base(); return *this; }
+		//reverse_iterator(it).base() == it
+		Iterator base() const { return current; }
+		reference operator*() const {
+			Iterator tem = current - 1;
+			return *tem; }
 		pointer operator->() const { return &(operator*()) };
 		reverse_iterator& operator++();
 		reverse_iterator  operator++(int);
@@ -32,11 +35,26 @@ namespace arsSTL {
 		reverse_iterator& operator+=(difference_type n);
 		reverse_iterator  operator- (difference_type n) const;
 		reverse_iterator& operator-=(difference_type n);
+		reference operator[](difference_type n) const { return *(*this + n); }
 
 	protected:
 		Iterator current;
-	//private:
-	//	Iterator deref_tmp  // exposition only
+	//friend functions
+	public:
+		template< class Iterator1, class Iterator2 >
+		friend bool operator==(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
+		template< class Iterator1, class Iterator2 >
+		friend bool operator!=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
+
+		template< class Iterator1, class Iterator2 >
+		friend bool operator<(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
+		template< class Iterator1, class Iterator2 >
+		friend bool operator<=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
+		template< class Iterator1, class Iterator2 >
+		friend bool operator>(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
+		template< class Iterator1, class Iterator2 >
+		friend bool operator>=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
+
 	};
 
 
@@ -49,8 +67,8 @@ namespace arsSTL {
 
 	template <typename Iterator>
 	reverse_iterator<Iterator> reverse_iterator<Iterator>:: operator++(int) {
-		Iterator tem = *this;
-		--*this;
+		reverse_iterator<Iterator> tem = *this;
+		--current;
 		return tem;
 	}
 	
@@ -62,15 +80,14 @@ namespace arsSTL {
 
 	template <typename Iterator>
 	reverse_iterator<Iterator> reverse_iterator<Iterator>:: operator--(int) {
-		Iterator tem = *this;
-		++*this;
+		reverse_iterator<Iterator> tem = *this;
+		++current;
 		return tem;
 	};
 
 	template <typename Iterator>
 	reverse_iterator<Iterator> reverse_iterator<Iterator>::operator+ (difference_type n) const {
-		Iterator tem = *this + n;
-		return tem;
+		return reverse_iterator<Iterator>(current + n);
 	}
 
 	template <typename Iterator>
@@ -81,16 +98,42 @@ namespace arsSTL {
 
 	template <typename Iterator>
 	reverse_iterator<Iterator> reverse_iterator<Iterator>::operator-(difference_type n) const {
-		return this->operator+(-n);
+		return reverse_iterator<Iterator>(current - n);
 	}
 	
 	template <typename Iterator>
 	reverse_iterator<Iterator>& reverse_iterator<Iterator>::operator-=(difference_type n){
-		return this->operator+=(-n);
+		current += n;
+		return *this;
+	}
+
+	//friend function
+	template< class Iterator1, class Iterator2 >
+	bool operator==(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs) {
+		return lhs.base() == rhs.base();
+	}
+	template< class Iterator1, class Iterator2 >
+	bool operator!=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs) {
+		return !(lhs == rhs);
+	}
+
+	template< class Iterator1, class Iterator2 >
+	bool operator<(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs) {
+		return lhs.base() < rhs.base();
+	}
+	template< class Iterator1, class Iterator2 >
+	bool operator<=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs) {
+		return !(rhs < lhs);
+	}
+	template< class Iterator1, class Iterator2 >
+	bool operator>(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs) {
+		return !(lhs <= rhs);
+	}
+	template< class Iterator1, class Iterator2 >
+	bool operator>=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs) {
+		return !(lhs < rhs);
 	}
 
 };
-
-
 
 #endif
