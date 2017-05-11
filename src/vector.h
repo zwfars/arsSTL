@@ -332,7 +332,7 @@ namespace arsSTL {
 	//resize 
 	template<typename T,typename Allocator>
 	void vector<T, Allocator>::resize(size_type sz) {
-		// newcapacity = max(capacity + capacity*0.5，sz);
+		// newcapacity = max(capacity + capacity，sz);
 		size_type temsz = size();
 		size_type temcap = capacity();
 		if (sz <= temsz) {
@@ -527,7 +527,8 @@ namespace arsSTL {
 				alloc.construct(first_free++, x);
 		}
 		else if(sz>temcap){
-			size_type len = temcap + (temcap >> 1);
+			//size_type len = temcap + (temcap >> 1);
+			size_type len = (temcap << 1);
 			len = len > sz ? len : sz;
 			iterator temelement = alloc.allocate(len);
 			iterator cur = uninitialized_copy(begin(), end(), temelement);
@@ -539,8 +540,4 @@ namespace arsSTL {
 		}
 	}
 }
-
-
-
-
 #endif
