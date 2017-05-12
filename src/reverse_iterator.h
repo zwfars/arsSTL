@@ -39,22 +39,6 @@ namespace arsSTL {
 
 	protected:
 		Iterator current;
-	//friend functions
-	public:
-		template< class Iterator1, class Iterator2 >
-		friend bool operator==(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
-		template< class Iterator1, class Iterator2 >
-		friend bool operator!=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
-
-		template< class Iterator1, class Iterator2 >
-		friend bool operator<(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
-		template< class Iterator1, class Iterator2 >
-		friend bool operator<=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
-		template< class Iterator1, class Iterator2 >
-		friend bool operator>(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
-		template< class Iterator1, class Iterator2 >
-		friend bool operator>=(const reverse_iterator<Iterator1>& lhs, const reverse_iterator<Iterator2>& rhs);
-
 	};
 
 
