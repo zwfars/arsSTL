@@ -3,6 +3,7 @@
 
 #include"list_elem.h"
 #include"iterator.h"
+#include<allocators>
 
 namespace arsSTL {
 	template < class T, class Allocator = std::allocator<T>>
@@ -12,20 +13,21 @@ namespace arsSTL {
 		using reference = value_type&; ;
 		using const_reference = const value_type&;
 		using iterator = list_iterator<T>;
-		using const_iterator = list_iterator<const T>;
+		using const_iterator = list_const_iterator<T>;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using allocator_type = Allocator;
-		using pointer = typename allocator_traits<Allocator>::pointer;
-		using const_point = typename allocator_traits<Allocator>::const_pointer;
+		using pointer = typename std::allocator_traits<Allocator>::pointer;
+		using const_point = typename std::allocator_traits<Allocator>::const_pointer;
 		using reverse_iterator = arsSTL::reverse_iterator<iterator>;
 		using const_reverse_iterator =  arsSTL::reverse_iterator<const_iterator>;
+	private:
 		using list_node = arsSTL::list_node<T>;
-		using my_list = list<T, Allocator>;
+		using node_pointer = list_node*;
 	
 	public:
-		//explicit list(const Allocator& = Allocator());
-		//explicit list(size_type n);
+		explicit list(const Allocator& = Allocator());
+		explicit list(size_type n);
 		//list(size_type n, const T& value, const Allocator& = Allocator());
 		//template <class InputIterator>
 		//list(InputIterator first, InputIterator last, const Allocator& = Allocator());
@@ -44,10 +46,10 @@ namespace arsSTL {
 		//void assign(initializer_list<T>);
 		//allocator_type get_allocator() const noexcept;
 
-		//// iterators:
-		//iterator                begin() noexcept;
+		// iterators:
+		iterator                begin() noexcept { return iterator(first_free->next); }
 		//const_iterator          begin() const noexcept;
-		//iterator                end() noexcept;
+		iterator                end() noexcept { return iterator(first_free); }
 		//const_iterator          end() const noexcept;
 
 		//reverse_iterator        rbegin() noexcept;
@@ -61,32 +63,34 @@ namespace arsSTL {
 		//const_reverse_iterator  crend() const noexcept;
 
 		//// capacity:
-		//size_type size() const noexcept;
-		//size_type max_size() const noexcept;
+		size_type size() const noexcept { return sz; }
+		size_type max_size() const noexcept { return size_t(-1) / sizeof(list_node); }
 		//void      resize(size_type sz);
 		//void      resize(size_type sz, const T& c);
-		//bool      empty() const noexcept;
+		bool      empty() const noexcept { return sz == 0; }
 
 		//// element access:
-		//reference       front();
-		//const_reference front() const;
-		//reference       back();
-		//const_reference back() const;
+		reference       front() { return first_free->next->val; }
+		const_reference front() const { return first_free->next->val; }
+		reference       back() { return first_free->prev->val; }
+		const_reference back() const { return first_free->next->val; }
 
 		//// modifiers:
-		//template <class... Args> void emplace_front(Args&&... args);
+		template <class... Args> 
+		void emplace_front(Args&&... args) { emp_aux(begin(), std::forward<Args>(args)...); }
 		//void pop_front();
-		//template <class... Args> void emplace_back(Args&&... args);
-		//void push_front(const T& x);
-		//void push_front(T&& x);
-		//void push_back(const T& x);
-		//void push_back(T&& x);
+		template <class... Args> 
+		void emplace_back(Args&&... args) { emp_aux(end(), std::forward<Args>(args)...); }
+		void push_front(const T& x) { emp_aux(begin(), x); }
+		void push_front(T&& x) { emp_aux(end(), std::forward<T>(x)); }
+		void push_back(const T& x) { emp_aux(end(), x); }
+		void push_back(T&& x) { emp_aux(end(), std::forward<T>(x)); }
 		//void pop_back();
 
-		//template <class... Args> iterator emplace(const_iterator position, Args&&... args);
-		//iterator insert(const_iterator position, const T& x);
-		//iterator insert(const_iterator position, T&& x);
-		//iterator insert(const_iterator position, size_type n, const T& x);
+		template <class... Args> iterator emplace(const_iterator position, Args&&... args);
+		iterator insert(const_iterator position, const T& x) { return emplace(position, x); }
+		iterator insert(const_iterator position, T&& x) { return emplace(position, std::forward<T>(x)); }
+		iterator insert(const_iterator position, size_type n, const T& x);
 		//template <class InputIterator>
 		//iterator insert(const_iterator position, InputIterator first,
 		//	InputIterator last);
@@ -98,11 +102,10 @@ namespace arsSTL {
 		//void     swap(list<T, Allocator>&);
 		//void     clear() noexcept;
 
-		//// list operations:
+		// list operations:
 		//void splice(const_iterator position, list<T, Allocator>& x);
 		//void splice(const_iterator position, list<T, Allocator>&& x);
-		//void splice(const_iterator position, list<T, Allocator>& x,
-		//	const_iterator i);
+		//void splice(const_iterator position, list<T, Allocator>& x,const_iterator i);
 		//void splice(const_iterator position, list<T, Allocator>&& x,
 		//	const_iterator i);
 		//void splice(const_iterator position, list<T, Allocator>& x,
@@ -125,11 +128,86 @@ namespace arsSTL {
 		//template <class Compare> void sort(Compare comp);
 
 		//void reverse() noexcept;
+	
+	// aux funciton
 	private:
-		Allocator::rebind<list_node>::other alloc;
-		iterator first_free;
+		void list_init();
+		template<typename...Args>
+		node_pointer creat_aux(Args&&...);
+		template<typename...Args>
+		void emp_aux(iterator, Args...);
+		
+		template<typename InputIterator>
+		void ins_aux(iterator postion, InputIterator first, InputIterator last);
+
+	private:
+		/*syntax!!!*/
+		typename Allocator::template rebind<list_node>::other alloc;
+		node_pointer first_free;
 		size_type sz;
 	};
+
+
+
+	//construct function
+	template<typename T,typename Allocator>
+	list<T, Allocator>::list(const Allocator& a):alloc(a){
+		list_init();
+	}
+	template<typename T,typename Allocator>
+	list<T, Allocator>::list(size_type n) {
+		list_init();
+		for (auto i = 0; i < n; i++)
+			emp_aux(end(), T());
+	}
+
+	//modifiers
+	template<typename T,typename Allocator>
+	template <class... Args> 
+	typename list<T, Allocator>::iterator list<T, Allocator>::emplace(const_iterator position, Args&&... args) {
+		emp_aux(iterator(position.cur), std::forward<Args>(args)...);
+		return iterator(position.cur);
+	}
+
+	template<typename T,typename Allocator>
+	typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position, size_type n, const T& x) {
+		iterator tem(position.cur);
+		for (size_type i = 0; i < n; i++) {
+			emp_aux(tem, x);
+			++tem;
+		}
+		return iterator(position.cur);
+	}
+
+
+
+	// auxiliary function
+	template<typename T,typename Allocator>
+	void list<T, Allocator>::list_init() {
+		first_free = alloc.allocate(1);
+		first_free->next = first_free;
+		first_free->prev = first_free;
+	}
+
+	template<typename T,typename Allocator>
+	template<typename...Args>
+	typename list<T, Allocator>::node_pointer list<T, Allocator>::creat_aux(Args&&...args) {
+		node_pointer tem = alloc.allocate(1);
+		alloc.construct(tem,(args)...);
+		return tem;
+	}
+
+	template<typename T,typename Allocator>
+	template<typename...Args>
+	void list<T, Allocator>::emp_aux(iterator position,Args...args) {
+		node_pointer tem = creat_aux(std::forward<Args>(args)...);
+		tem->next = position.cur;
+		tem->prev = position.cur->prev;
+		tem->prev->next = tem;
+		position.cur->prev = tem;
+		++sz;
+	}
+
 
 }
 
