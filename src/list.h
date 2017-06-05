@@ -91,10 +91,14 @@ namespace arsSTL {
 		iterator insert(const_iterator position, const T& x) { return emplace(position, x); }
 		iterator insert(const_iterator position, T&& x) { return emplace(position, std::forward<T>(x)); }
 		iterator insert(const_iterator position, size_type n, const T& x);
-		//template <class InputIterator>
-		//iterator insert(const_iterator position, InputIterator first,
-		//	InputIterator last);
-		//iterator insert(const_iterator position, initializer_list<T>);
+		template <class InputIterator>
+		iterator insert(const_iterator position, InputIterator first,
+			InputIterator last) {
+			return ins_aux(iterator(position.cur), first, last, typename std::is_integral<InputIterator>::type());
+		}
+		iterator insert(const_iterator position, std::initializer_list<T> x) {
+			return insert(iterator(position.cur), x.begin(), x.end());
+		}
 
 
 		//iterator erase(const_iterator position);
@@ -138,7 +142,11 @@ namespace arsSTL {
 		void emp_aux(iterator, Args...);
 		
 		template<typename InputIterator>
-		void ins_aux(iterator postion, InputIterator first, InputIterator last);
+		iterator ins_aux(iterator postion, InputIterator first, InputIterator last, std::true_type);
+
+		template<typename InputIterator>
+		iterator ins_aux(iterator postion, InputIterator first, InputIterator last,std::false_type);
+
 
 	private:
 		/*syntax!!!*/
@@ -157,7 +165,7 @@ namespace arsSTL {
 	template<typename T,typename Allocator>
 	list<T, Allocator>::list(size_type n) {
 		list_init();
-		for (auto i = 0; i < n; i++)
+		for (size_type i = 0; i < n; i++)
 			emp_aux(end(), T());
 	}
 
@@ -199,7 +207,7 @@ namespace arsSTL {
 
 	template<typename T,typename Allocator>
 	template<typename...Args>
-	void list<T, Allocator>::emp_aux(iterator position,Args...args) {
+	void list<T, Allocator>::emp_aux(iterator position, Args...args) {
 		node_pointer tem = creat_aux(std::forward<Args>(args)...);
 		tem->next = position.cur;
 		tem->prev = position.cur->prev;
@@ -207,6 +215,23 @@ namespace arsSTL {
 		position.cur->prev = tem;
 		++sz;
 	}
+
+	template<typename T,typename Allocator>
+	template<typename InputIterator>
+	typename list<T, Allocator>::iterator list<T, Allocator>::ins_aux(iterator position, InputIterator first, InputIterator last,std::true_type) {
+		while (first--)
+			insert(position, last);
+		return position;
+	}
+
+	template<typename T, typename Allocator>
+	template<typename InputIterator>
+	typename list<T,Allocator>::iterator list<T, Allocator>::ins_aux(iterator position, InputIterator first, InputIterator last, std::false_type) {
+		while (last-- != first)
+			insert(position,*last);
+		return position;
+	}
+
 
 
 }
