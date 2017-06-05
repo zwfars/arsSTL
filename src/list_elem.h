@@ -25,11 +25,42 @@ namespace arsSTL {
 		using reference = T&;
 		using iterator_category = bidirectional_iterator_tag;
 		using node_pointer = list_node<T>*;
-
+		using my_iterator = list_iterator<T>;
+		struct const_list_iterator;
 	// the member of list_iterator
 		node_pointer cur;
 	// construct function
-		list_iterator(node_pointer x=nullptr) :cur(x) {}
+		list_iterator(node_pointer x = nullptr) :cur(x) {}
+
+		//operator function	
+		my_iterator& operator++() {
+			cur = cur->next;
+			return *this;
+		}
+		my_iterator& operator--() {
+			cur = cur->prev;
+			return *this;
+		}
+		my_iterator operator++(int) {
+			my_iterator old = *this;
+			++*this;
+			return old;
+		}
+		my_iterator operator--(int) {
+			my_iterator old = *this;
+			--*this;
+			return old;
+		}
+		T& operator*() {
+			return cur->val;
+		}
+
+
+		// friend function 
+		template<typename T>
+		friend bool operator==(list_iterator<T>& lhs, list_iterator<T>& rhs) { return lhs.cur == rhs.cur; }
+		template<typename T>
+		friend bool operator!=(list_iterator<T>& lhs, list_iterator<T>& rhs) { return !(lhs == rhs); }
 		
 	};
 	template<typename T>
@@ -41,18 +72,39 @@ namespace arsSTL {
 		using iterator_category = bidirectional_iterator_tag;
 		using node_pointer = list_node<T>*;
 		using my_iterator = list_const_iterator <T>;
+
+		//the member of list_const_iterator
 		node_pointer cur;
 		list_const_iterator(node_pointer x = nullptr) :cur(x) {}
 		list_const_iterator(list_iterator<T> x) :cur(x.cur) {}
 
-		my_iterator operator++() {
+		my_iterator& operator++() {
 			cur = cur->next;
 			return *this;
 		}
-		my_iterator operator--() {
+		my_iterator& operator--() {
 			cur = cur->prev;
 			return *this;
 		}
+		my_iterator operator++(int) {
+			my_iterator old = *this;
+			++*this;
+			return old;
+		}
+		my_iterator operator--(int) {
+			my_iterator old = *this;
+			--*this;
+			return old;
+		}
+
+		const T& operator*() {
+			return cur->val;
+		}
+
+		//template<typename T>
+		friend bool operator==(list_iterator<T>& lhs, list_iterator<T>& rhs) { return lhs.cur == rhs.cur; }
+		//template<typename T>
+		friend bool operator!=(list_iterator<T>& lhs, list_iterator<T>& rhs) { return !(lhs == rhs); }
 
 	};
 }
