@@ -42,12 +42,12 @@ namespace arsSTL {
 		}
 		list<T, Allocator>& operator=(const list<T, Allocator>& x);
 		list<T, Allocator>& operator=(list<T, Allocator>&& x);
-		//list& operator=(initializer_list<T>);
-		//template <class InputIterator>
-		//void assign(InputIterator first, InputIterator last);
-		//void assign(size_type n, const T& t);
-		//void assign(initializer_list<T>);
-		//allocator_type get_allocator() const noexcept { return alloc; }
+		list& operator=(std::initializer_list<T>);
+		template <class InputIterator>
+		void assign(InputIterator first, InputIterator last);
+		void assign(size_type n, const T& t);
+		void assign(std::initializer_list<T>);
+		allocator_type get_allocator() const noexcept { return alloc; }
 
 		// iterators:
 		iterator                begin() noexcept { return iterator(first_free->next); }
@@ -252,9 +252,10 @@ namespace arsSTL {
 	}
 
 	template<typename T, typename Allocator>
-	list& list<T, Allocator>::operator=(initializer_list<T> x) {
+	list<T,Allocator>& list<T, Allocator>::operator=(std::initializer_list<T> x) {
 		clear();
 		insert(begin(), x.begin(), x.end());
+		return *this;
 	}
 
 	template<typename T,typename Allocator>
@@ -271,7 +272,7 @@ namespace arsSTL {
 	}
 
 	template<typename T,typename Allocator>
-	void list<T, Allocator>::assign(initializer_list<T> x) {
+	void list<T, Allocator>::assign(std::initializer_list<T> x) {
 		assign(x.begin(), x.end());
 	}
 
@@ -356,10 +357,10 @@ namespace arsSTL {
 	template<typename InputIterator>
 	typename list<T,Allocator>::iterator list<T, Allocator>::ins_aux(iterator position, InputIterator first, InputIterator last, std::false_type) {
 		while (1) {
-			--last;
-			position = insert(position, *last);
 			if (last == first)
 				break;
+			--last;
+			position = insert(position, *last);
 		}
 		return position;
 	}
@@ -383,8 +384,8 @@ namespace arsSTL {
 	void list<T, Allocator>::assign_aux(InputIterator first, InputIterator last, std::false_type) {
 		iterator tem = begin();
 		for (; first != last&&tem != end(); tem++, first++) {
-			alloc.destory(tem);
-			alloc.construct(tem, *first);
+			alloc.destroy(tem.cur);
+			alloc.construct(tem.cur, *first);
 		}
 		insert(end(), first, last);
 		erase(tem, end());
