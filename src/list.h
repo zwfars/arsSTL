@@ -113,15 +113,22 @@ namespace arsSTL {
 		void     clear() noexcept { erase(begin(), end()); }
 
 		// list operations:
-		//void splice(const_iterator position, list<T, Allocator>& x);
-		//void splice(const_iterator position, list<T, Allocator>&& x);
-		//void splice(const_iterator position, list<T, Allocator>& x,const_iterator i);
-		//void splice(const_iterator position, list<T, Allocator>&& x,
-		//	const_iterator i);
-		//void splice(const_iterator position, list<T, Allocator>& x,
-		//	const_iterator first, const_iterator last);
-		//void splice(const_iterator position, list<T, Allocator>&& x,
-		//	const_iterator first, const_iterator last);
+		void splice(const_iterator position, list<T, Allocator>& x);
+		void splice(const_iterator position, list<T, Allocator>&& x) { splice(position, (list<T, Allocator>&)x); }
+		void splice(const_iterator position, list<T, Allocator>& x, const_iterator i) { 
+			auto tem = i;
+			splice(position, x, i,++tem); 
+		}
+		void splice(const_iterator position, list<T, Allocator>&& x,
+			const_iterator i) {
+			splice(position, (list<T, Allocator>&)x, i);
+		}
+		void splice(const_iterator position, list<T, Allocator>& x,
+			const_iterator first, const_iterator last);
+		void splice(const_iterator position, list<T, Allocator>&& x,
+			const_iterator first, const_iterator last) {
+			splice(position, (list<T, Allocator>&)x, first, last);
+		}
 
 		//void remove(const T& value);
 		//template <class Predicate> void remove_if(Predicate pred);
@@ -161,6 +168,8 @@ namespace arsSTL {
 
 		template<typename InputIterator>
 		void assign_aux(InputIterator first, InputIterator last, std::false_type);
+
+		void splice_aux(const_iterator position, const_iterator first, const_iterator last);
 
 
 	private:
@@ -208,7 +217,7 @@ namespace arsSTL {
 		sz = x.sz;
 		x.sz = 0;
 		first_free = x.first_free;
-		x.first_free = nullptr;
+		x.list_init();
 	}
 
 	template<typename T,typename Allocator>
@@ -222,7 +231,7 @@ namespace arsSTL {
 		sz = x.sz;
 		x.sz = 0;
 		first_free = x.first_free;
-		x.first_free = nullptr;
+		lx.list_init();
 	}
 
 	template<typename T,typename Allocator>
@@ -316,6 +325,25 @@ namespace arsSTL {
 	}
 
 
+	//list operations
+	template<typename T,typename Allocator>
+	void list<T, Allocator>::splice(const_iterator position, list<T, Allocator>& x) {
+		if (this != &x) {
+			insert(position, x.begin(), x.end());
+			x.first_free->next = x.first_free->prev = x.first_free;
+			x.sz = 0;
+		}
+	}
+
+	template<typename T, typename Allocator>
+	void list<T, Allocator>::splice(const_iterator position, list<T, Allocator>& x,
+		const_iterator first, const_iterator last) {
+		auto tem = first;
+		while (tem++ != last)
+			--x.sz;
+		splice_aux(position, first, last);
+	}
+
 
 	// auxiliary function
 	template<typename T,typename Allocator>
@@ -389,6 +417,19 @@ namespace arsSTL {
 		}
 		insert(end(), first, last);
 		erase(tem, end());
+	}
+
+	template<typename T,typename Allocator>
+	void list<T, Allocator>::splice_aux(const_iterator position, const_iterator first, const_iterator last) {
+		if (position != last) {
+			auto tem = first.cur->prev;
+			position.cur->prev->next = first.cur;
+			first.cur->prev = position.cur->prev;
+			position.cur->prev = last.cur->prev;
+			last.cur->prev->next = position.cur;
+			tem->next = last.cur;
+			last.cur->prev = tem;
+		}
 	}
 
 }
