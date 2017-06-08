@@ -68,8 +68,8 @@ namespace arsSTL {
 		//// capacity:
 		size_type size() const noexcept { return sz; }
 		size_type max_size() const noexcept { return size_t(-1) / sizeof(list_node); }
-		//void      resize(size_type sz);
-		//void      resize(size_type sz, const T& c);
+		void      resize(size_type sz) { resize(sz, T()); }
+		void      resize(size_type sz, const T& c);
 		bool      empty() const noexcept { return sz == 0; }
 
 		//// element access:
@@ -130,21 +130,32 @@ namespace arsSTL {
 			splice(position, (list<T, Allocator>&)x, first, last);
 		}
 
-		//void remove(const T& value);
-		//template <class Predicate> void remove_if(Predicate pred);
+		void remove(const T& value);
+		template <class Predicate> void remove_if(Predicate pred);
 
-		//void unique();
-		//template <class BinaryPredicate> void unique(BinaryPredicate binary_pred);
+		void unique();
+		template <class BinaryPredicate> void unique(BinaryPredicate binary_pred);
 
-		//void merge(list<T, Allocator>& x);
-		//void merge(list<T, Allocator>&& x);
-		//template <class Compare> void merge(list<T, Allocator>& x, Compare comp);
-		//template <class Compare> void merge(list<T, Allocator>&& x, Compare comp);
+		void merge(list<T, Allocator>& x) {
+			merge(x, [](const T& lhs, const T& rhs) {return lhs < rhs; });
+		}
+		void merge(list<T, Allocator>&& x) {
+			merge((list<T, Allocator>&)x);
+		}
+		template <class Compare> void merge(list<T, Allocator>& x, Compare comp);
+		template <class Compare> void merge(list<T, Allocator>&& x, Compare comp) { 
+			merge((list<T, Allocator>&)x, comp); 
+		}
 
-		//void sort();
-		//template <class Compare> void sort(Compare comp);
+		void sort() { sort([](const T& a, const T& b) {return a < b; }); }
+		template <class Compare> void sort(Compare comp);
 
-		//void reverse() noexcept;
+		void reverse() noexcept {
+			auto tem = --end();
+			auto first = begin();
+			while (tem != first)
+				splice(first, *this, tem--);
+		}
 	
 
 	// aux funciton
@@ -170,6 +181,9 @@ namespace arsSTL {
 		void assign_aux(InputIterator first, InputIterator last, std::false_type);
 
 		void splice_aux(const_iterator position, const_iterator first, const_iterator last);
+		
+		template<typename Compare>
+		iterator sort_aux(iterator first, iterator last, Compare comp,size_type sz);
 
 
 	private:
@@ -238,6 +252,15 @@ namespace arsSTL {
 	list<T, Allocator>::list(std::initializer_list<T> ix, const Allocator& x) {
 		list_init();
 		insert(begin(), ix.begin(), ix.end());
+	}
+
+	//capacity
+	template<typename T,typename Allocator>
+	void list<T, Allocator>::resize(size_type mysz, const T& c) {
+		while (mysz < size())
+			erase(--end());
+		while (mysz > size())
+			emplace_back(c);
 	}
 
 
@@ -325,7 +348,7 @@ namespace arsSTL {
 	}
 
 
-	//list operations
+	//list operations splice
 	template<typename T,typename Allocator>
 	void list<T, Allocator>::splice(const_iterator position, list<T, Allocator>& x) {
 		if (this != &x) {
@@ -342,6 +365,74 @@ namespace arsSTL {
 		while (tem++ != last)
 			--x.sz;
 		splice_aux(position, first, last);
+	}
+
+	//list operations remove
+	template<typename T,typename Allocator>
+	void list<T, Allocator>::remove(const T& value) {
+		for (auto tem = begin(); tem != end();) {
+			if (*tem == value)
+				tem = erase(tem);
+			else
+				++tem;
+		}
+	}
+
+	template<typename T,typename Allocator>
+	template <class Predicate> 
+	void list<T, Allocator>::remove_if(Predicate pred) {
+		for (auto tem = begin(); tem != end();) {
+			if (pred(*tem))
+				tem = erase(tem);
+			else
+				++tem;
+		}
+
+	}
+
+	//list operations  unique
+	template<typename T,typename Allocator>
+	void list<T, Allocator>::unique() {
+		unique([](const T& a, const T& b) {return a == b;});
+	}
+	template<typename T,typename Allocator>
+	template <class BinaryPredicate> 
+	void list<T, Allocator>::unique(BinaryPredicate binary_pred) {
+		auto tem = ++begin();
+		for (; tem != end();) {
+			auto auxtem = tem;
+			if (binary_pred(*tem, *(--auxtem)))
+				tem = erase(tem);
+			else
+				++tem;
+		}
+	}
+
+	//list operations merge
+	template<typename T,typename Allocator>
+	template <class Compare> 
+	void list<T, Allocator>::merge(list<T, Allocator>& x, Compare comp) {
+		auto tem1 = begin();
+		auto tem2 = x.begin();
+		while (tem1 != end() && tem2 != x.end()) {
+			auto l2 = tem2;
+			if (comp(*l2, *tem1)) {
+				++tem2;
+				splice(tem1, x, l2);
+			}
+			else
+				++tem1;
+		}
+		if (tem2 != x.end())
+			splice(end(), x);
+
+	}
+
+	//list operations sort
+	template<typename T,typename Allocator>
+	template <class Compare> 
+	void list<T, Allocator>::sort(Compare comp) {
+		sort_aux(begin(), end(), comp, size());
 	}
 
 
@@ -432,6 +523,29 @@ namespace arsSTL {
 		}
 	}
 
+	template<typename T,typename Allocator>
+	template<typename Compare>
+	typename list<T,Allocator>::iterator list<T, Allocator>::sort_aux(iterator first, iterator last, Compare comp, size_type mysz) {
+		if (mysz < 2)
+			return first;
+		auto mid = first;
+		for (int i = 0; i < mysz / 2; i++)
+			++mid;
+		first = sort_aux(first, mid, comp, mysz/2);
+		mid = sort_aux(mid, last, comp, mysz - mysz / 2);
+		auto ans = mid;
+		auto temid = mid;
+		if (comp(*first, *mid))
+			ans = first;
+		while (first != temid && mid != last) {
+			if (comp(*first, *mid))
+				++first;
+			else {
+				splice(first, *this, mid++);
+			}
+		}
+		return ans;
+	}
 }
 
 #endif
