@@ -1,6 +1,8 @@
 #ifndef ITERATOR_H
 #define ITERATOR_H
 
+#include<stddef.h>
+
 namespace arsSTL {
 	// Iterator tags
 	struct input_iterator_tag {};
@@ -23,10 +25,10 @@ namespace arsSTL {
 	template<typename Iterator>
 	struct iterator_traits{
 		using value_type = typename Iterator::value_type;
-		using differenct_type = typename Iterator::difference_type;
-		using pointer = typename Iterator::Pointer;
-		using reference = typename Iterator::Reference;
-		using iterator_category = typename Iterator::category;
+		using difference_type = typename Iterator::difference_type;
+		using pointer = typename Iterator::pointer;
+		using reference = typename Iterator::reference;
+		using iterator_category = typename Iterator::iterator_category;
 	};
 
 	// iterator_traits--- pointer
