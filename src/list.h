@@ -253,7 +253,7 @@ namespace arsSTL {
 		insert(begin(), ix.begin(), ix.end());
 	}
 
-	//capacity
+	//capacity resize
 	template<typename T,typename Allocator>
 	void list<T, Allocator>::resize(size_type mysz, const T& c) {
 		while (mysz < size())
