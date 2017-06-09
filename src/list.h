@@ -20,11 +20,11 @@ namespace arsSTL {
 		using pointer = typename std::allocator_traits<Allocator>::pointer;
 		using const_point = typename std::allocator_traits<Allocator>::const_pointer;
 		using reverse_iterator = arsSTL::reverse_iterator<iterator>;
-		using const_reverse_iterator =  arsSTL::reverse_iterator<const_iterator>;
+		using const_reverse_iterator = arsSTL::reverse_iterator<const_iterator>;
 	private:
 		using list_node = arsSTL::list_node<T>;
 		using node_pointer = list_node*;
-	
+
 	public:
 		explicit list(const Allocator& = Allocator());
 		explicit list(size_type n);
@@ -38,7 +38,7 @@ namespace arsSTL {
 		list(std::initializer_list<T>, const Allocator& = Allocator());
 		~list() {
 			clear();
-			alloc.deallocate(first_free,1);
+			alloc.deallocate(first_free, 1);
 		}
 		list<T, Allocator>& operator=(const list<T, Allocator>& x);
 		list<T, Allocator>& operator=(list<T, Allocator>&& x);
@@ -55,15 +55,14 @@ namespace arsSTL {
 		iterator                end() noexcept { return iterator(first_free); }
 		const_iterator          end() const noexcept { return const_iterator(first_free); }
 
-		//reverse_iterator        rbegin() noexcept;
-		//const_reverse_iterator  rbegin() const noexcept;
-		//reverse_iterator        rend() noexcept;
-		//const_reverse_iterator  rend() const noexcept;
-
+		reverse_iterator        rbegin() noexcept { return reverse_iterator(end()); }
+		const_reverse_iterator  rbegin() const noexcept { return const_reverse_iterator(end()); }
+		reverse_iterator        rend() noexcept { return reverse_iterator(begin()); }
+		const_reverse_iterator  rend() const noexcept {return const_reverse_iterator(begin());}
 		const_iterator          cbegin() const noexcept { return const_iterator(first_free->next); }
 		const_iterator          cend() const noexcept { return const_iterator(first_free); }
-		//const_reverse_iterator  crbegin() const noexcept;
-		//const_reverse_iterator  crend() const noexcept;
+		const_reverse_iterator  crbegin() const noexcept { return const_reverse_iterator(end()); }
+		const_reverse_iterator  crend() const noexcept { return const_reverse_iterator(begin()); }
 
 		//// capacity:
 		size_type size() const noexcept { return sz; }
