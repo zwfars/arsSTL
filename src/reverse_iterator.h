@@ -10,9 +10,9 @@ namespace arsSTL {
 		typename iterator_traits<Iterator>::value_type,
 		typename iterator_traits<Iterator>::difference_type,
 		typename iterator_traits<Iterator>::pointer,
-		typename iterator_traits<Iterator>::reference>{
+		typename iterator_traits<Iterator>::reference> {
 	public:
-		using iterator_type = Iterator;
+		using iterator_type = Iterator;                        
 		using difference_type = typename iterator_traits<Iterator>::difference_type;
 		using pointer = typename iterator_traits<Iterator>::pointer;
 		using reference = typename iterator_traits<Iterator>::reference;
@@ -24,8 +24,8 @@ namespace arsSTL {
 		//reverse_iterator(it).base() == it
 		Iterator base() const { return current; }
 		reference operator*() const {
-			Iterator tem = current - 1;
-			return *tem; }
+			Iterator tem = current;
+			return *(--tem); }
 		pointer operator->() const { return &(operator*()) };
 		reverse_iterator& operator++();
 		reverse_iterator  operator++(int);
