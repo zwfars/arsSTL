@@ -545,6 +545,56 @@ namespace arsSTL {
 		}
 		return ans;
 	}
+		//some non-member functions 
+	template< class T, class Allocator >
+	inline bool operator==(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+		if (lhs.size() == rhs.size()) {
+			auto l1 = lhs.begin();
+			auto l2 = rhs.begin();
+			for (; l1 != lhs.end(); ++l1, ++l2) {
+				if (*l1 != *l2)
+					return false;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	template< class T, class Allocator >
+	inline bool operator!=(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+		return !(lhs == rhs);
+	}
+
+	template< class T, class Allocator>
+	inline bool operator<(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+		auto l1 = lhs.begin();
+		auto l2 = rhs.begin();
+		while (l1 != lhs.end() && l2 != rhs.end()) {
+			if (*l1 < *l2)
+				return true;
+			else if (*l1>*l2)
+				return false;
+			else {
+				++l1, ++l2;
+			}
+		}
+		if (l1 != lhs.end())
+			return false;
+		return true;
+	}
+
+	template< class T, class Allocator >
+	inline bool operator<=(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+		return !(lhs<rhs);
+	}
+	template< class T, class Allocator >
+	inline bool operator>(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+		return rhs < lhs;
+	}
+	template< class T, class Allocator>
+	inline bool operator>=(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+		return !(lhs < rhs);
+	}
 }
 
 #endif
