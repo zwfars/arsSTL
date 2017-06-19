@@ -72,7 +72,7 @@ namespace arsSTL {
 		//bool      empty() const noexcept;
 
 		//// element access:
-		//reference       operator[](size_type n);
+		reference       operator[](size_type n) { return *(begin() + n); }
 		//const_reference operator[](size_type n) const;
 		//reference       at(size_type n);
 		//const_reference at(size_type n) const;
@@ -82,14 +82,14 @@ namespace arsSTL {
 		//const_reference back() const;
 
 		//// modifiers:
-		//template <class... Args> void emplace_front(Args&&... args);
-		//template <class... Args> void emplace_back(Args&&... args);
+		template <class... Args> void emplace_front(Args&&... args);
+		template <class... Args> void emplace_back(Args&&... args);
 		//template <class... Args> iterator emplace(const_iterator position, Args&&... args);
 
-		//void push_front(const T& x);
-		//void push_front(T&& x);
-		//void push_back(const T& x);
-		//void push_back(T&& x);
+		void push_front(const T& x) { emplace_front(x); }
+		void push_front(T&& x) { emplace_front(std::forward<T>(x)); }
+		void push_back(const T& x) { emplace_back(x); }
+		void push_back(T&& x) { emplace_back(std::forward<T>(x)); }
 
 		//iterator insert(const_iterator position, const T& x);
 		//iterator insert(const_iterator position, T&& x);
@@ -109,6 +109,9 @@ namespace arsSTL {
 
 		//some auxiliary functions
 		void init_aux(size_type n, const T& value);
+		void map_front_aux(size_type added_num = 1);
+		void map_back_aux(size_type added_num = 1);
+		void map_added_aux(size_type added_num,bool added_front);
 		
 		// class members
 	private:
@@ -124,6 +127,37 @@ namespace arsSTL {
 	template<typename T,typename Allocator>
 	deque<T, Allocator>::deque(size_type n, const T& value, const Allocator& a):val_alloc(a){
 		init_aux(n, value);
+	}
+
+	//modifiers
+	template<typename T,typename Allocator>
+	template <class... Args> 
+	void deque<T, Allocator>::emplace_front(Args&&... args) {
+		difference_type off = first_free.cur - first_free.first;
+		if(element.cur==element.first){
+			map_front_aux();
+			auto tem = element.parent - 1;
+			*tem = val_alloc.allocate(chunk_sz(sizeof(T)));
+			element.set_node(tem);
+			element.cur = element.last;
+		}
+		first_free.cur = off + first_free.first;
+		val_alloc.construct(--element.cur, (args)...);
+	}
+
+	template<typename T, typename Allocator>
+	template <class... Args>
+	void deque<T, Allocator>::emplace_back(Args&&...args) {
+		difference_type off = element.cur - element.first;
+		if (first_free.cur == first_free.last - 1) {
+			map_back_aux();
+			auto tem = first_free.parent + 1;
+			*tem = val_alloc.allocate(chunk_sz(sizeof(T)));
+			first_free.set_node(tem);
+			first_free.cur = first_free.first;
+		}
+		element.cur = element.first + off;
+		val_alloc.construct(first_free.cur++, (args)...);
 	}
 
 
@@ -147,6 +181,49 @@ namespace arsSTL {
 		element.cur = element.first;
 		first_free.cur = first_free.first + n % block_sz;
 		uninitialized_fill(first_free.first, first_free.cur, value);
+	}
+
+	template<typename T,typename Allocator>
+	void deque<T,Allocator>::map_front_aux(size_type added_num) {
+		if (added_num > element.parent - map) {
+			map_added_aux(added_num, true);
+		}
+	}
+
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::map_back_aux(size_type added_num) {
+		if (added_num > map + map_sz - first_free.parent - 1) {
+			map_added_aux(added_num, false);
+		}
+	}
+
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::map_added_aux(size_type added_num, bool added_front) {
+		size_type last_sz = first_free.parent - element.parent + 1;
+		size_type cur_sz = last_sz + added_num;
+		map_pointer cur_elem;
+		if (map_sz > 2 * cur_sz) {
+			cur_elem = map + (map_sz - cur_sz) / 2 + (added_front ? added_num : 0);
+			if (element.parent >= cur_elem)
+				uninitialized_copy(element.parent, first_free.parent + 1, cur_elem);
+			else {
+				auto last_tem = first_free.parent;
+				auto tem = cur_elem + last_sz - 1;
+				for (; tem >= cur_elem; --tem, --last_tem)
+					tem = last_tem;
+			}
+		}
+		else {
+			size_type next_sz = map_sz + std::max(map_sz, cur_sz) + 2;
+			map_pointer next_map = map_alloc.allocate(next_sz);
+			cur_elem = next_map + (next_sz - cur_sz) / 2 + (added_front ? added_num : 0);
+			uninitialized_copy(element.parent, first_free.parent + 1, next_map);
+			map_alloc.deallocate(map, last_sz);
+			map = next_map;
+			map_sz = next_sz;
+		}
+		element.set_node(cur_elem);
+		first_free.set_node(cur_elem + last_sz - 1);
 	}
 
 }
