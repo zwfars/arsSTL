@@ -14,16 +14,24 @@ namespace arsSTL {
 		using size_type = size_t;
 		using map_pointer = T**;
 		using self = deque_iterator;
-	
-    
+		using iterator = deque_iterator<T, T&, T*>;
+		using const_iterator = deque_iterator<T, const T&, const T*>;
+		
+
+		//construct functions
+		deque_iterator() :cur(0), first(0), last(0), parent(0) {}
+		
+		//convert iterator to const_iterator
+		deque_iterator(map_pointer xmap, T* xcur) :cur(xcur), first(*xmap), last(*xmap + chunk_sz(sizeof(T))), parent(xmap) {}
+		deque_iterator(const iterator &x) :cur(x.cur), first(x.first), last(x.last), parent(x.parent) {};
+	    
 	//operator functions
 		self& operator++() {
+			++cur;
 			if (cur == last) {
 				set_node(parent + 1);
 				cur = first;
 			}
-			else
-				++cur;
 			return *this;
 		}
 		
@@ -38,8 +46,7 @@ namespace arsSTL {
 				set_node(parent - 1);
 				cur = last;
 			}
-			else
-				--cur;
+			--cur;
 			return *this;
 		}
 		
@@ -56,9 +63,14 @@ namespace arsSTL {
 				cur = first + total % chunk_sz(sizeof(T));
 			}
 			else {
-				size_type total = -n - (cur - first);
-				set_node(parent - total / chunk_sz(sizeof(T)));
-				cur = last - total % chunk_sz(sizeof(T));
+				//int total = -n - (cur - first);
+				if (cur - first >= -n)
+					cur = first + n;
+				else {
+					size_type total = -n - (cur - first);
+					set_node(parent - 1 - total / chunk_sz(sizeof(T)));
+					cur = last - total % chunk_sz(sizeof(T));
+				}
 			}
 			return *this;
 		}
@@ -78,19 +90,36 @@ namespace arsSTL {
 			tem -= n;
 			return tem;
 		}
+		
+		// < ,==
+		bool operator==(const self& other) {
+			return cur == other.cur;
+		}
 
+		bool operator!=(const self& other) {
+			return !(*this == other);
+		}
 
+		bool operator<(const self&other) {
+			return parent == other.parent ? (cur < other.cur) : (parent < other.parent);
+		}
 
 		reference operator*() {return *cur;}
 
 
 	//some auxiliary functions
 		void set_node(map_pointer other);
+	
+    //remove const property
+		iterator remove_const() const {
+			//iterator tem(parent, cur);
+			return iterator(parent,cur);
+		}
 
 	//struct member
-		pointer cur;
-		pointer first;
-		pointer last;
+		T* cur;
+		T* first;
+		T* last;
 		map_pointer parent;
 		
 	};
@@ -110,6 +139,12 @@ namespace arsSTL {
 	typename deque_iterator<T,Ref,Ptr>::difference_type operator-(const deque_iterator<T,Ref,Ptr>& lhs, const deque_iterator<T,Ref,Ptr>& rhs) {
 		return (lhs.parent - rhs.parent - 1)*chunk_sz(sizeof(T)) +
 			(rhs.last - rhs.cur ) + (lhs.cur - lhs.first);
+	}
+
+	template<typename T, typename Ref, typename Ptr,typename oRef,typename oPtr>
+	typename deque_iterator<T, Ref, Ptr>::difference_type operator-(const deque_iterator<T, Ref, Ptr>& lhs, const deque_iterator<T, oRef, oPtr>& rhs) {
+		return (lhs.parent - rhs.parent - 1)*chunk_sz(sizeof(T)) +
+			(rhs.last - rhs.cur) + (lhs.cur - lhs.first);
 	}
 }
 
