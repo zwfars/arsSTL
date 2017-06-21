@@ -19,10 +19,10 @@ namespace arsSTL {
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using  allocator_type = Allocator;
-		//using pointer = typename std::allocator_traits<Allocator>::pointer;
-		//using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
-		//using reverse_iterator = arsSTL::reverse_iterator<iterator>;
-		//using const_reverse_iterator = arsSTL::reverse_iterator<const_iterator>;
+		using pointer = typename std::allocator_traits<Allocator>::pointer;
+		using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
+		using reverse_iterator = arsSTL::reverse_iterator<iterator>;
+		using const_reverse_iterator = arsSTL::reverse_iterator<const_iterator>;
 		using map_pointer = T**;
 
 		// construct/copy/destroy:
@@ -39,24 +39,54 @@ namespace arsSTL {
 			insert(begin(), x.begin(), x.end());
 		}
 		deque(deque&& x) {
-			clear();
-			swap(*this, x);
+			init_aux(0, T());
+			swap(x);
 		}
-		//deque(const deque&, const Allocator&);
-		//deque(deque&&, const Allocator&);
-		//deque(initializer_list<T>, const Allocator& = Allocator());
+		deque(const deque& x, const Allocator& a) :val_alloc(a) {
+			init_aux(0, T());
+			insert(begin(), x.begin(), x.end());
+		}
+		deque(deque&& x, const Allocator& a):val_alloc(a) {
+			init_aux(0, T());
+			swap(x);
+		}
+		deque(std::initializer_list<T> x, const Allocator& = Allocator()) {
+			init_aux(0, T());
+			insert(begin(), x.begin(),x.end());
+		}
 
 		~deque() { 
 			erase(begin(), end());
 			map_alloc.deallocate(map, map_sz);
 		}
-		//deque<T, Allocator>& operator=(const deque<T, Allocator>& x);
-		//deque<T, Allocator>& operator=(deque<T, Allocator>&& x);
-		//deque& operator=(initializer_list<T>);
-		//template <class InputIterator>
-		//void assign(InputIterator first, InputIterator last);
-		//void assign(size_type n, const T& t);
-		//void assign(initializer_list<T>);
+		deque<T, Allocator>& operator=(const deque<T, Allocator>& x) {
+			clear();
+			insert(begin(), x.begin(), x.end());
+			return *this;
+		}
+		deque<T, Allocator>& operator=(deque<T, Allocator>&& x) {
+			clear();
+			swap(x);
+			return *this;
+		}
+		deque& operator=(std::initializer_list<T> x){
+			clear();
+			insert(begin(), x.begin(), x.end());
+			return *this;
+		}
+		template <class InputIterator>
+		void assign(InputIterator first, InputIterator last) {
+			clear();
+			insert(begin(), first, last);
+		}
+		void assign(size_type n, const T& t) {
+			clear();
+			insert(begin(), n, t);
+		}
+		void assign(std::initializer_list<T> x) {
+			clear();
+			insert(begin(), x.begin(), x.end());
+		}
 		allocator_type get_allocator() const noexcept { return val_alloc; }
 
 		//// iterators:
@@ -65,15 +95,15 @@ namespace arsSTL {
 		iterator                end() noexcept { return first_free; }
 		const_iterator          end() const noexcept { return first_free; }
 
-		//reverse_iterator        rbegin() noexcept;
-		//const_reverse_iterator  rbegin() const noexcept;
-		//reverse_iterator        rend() noexcept;
-		//const_reverse_iterator  rend() const noexcept;
+		reverse_iterator        rbegin() noexcept { return reverse_iterator(first_free); }
+		const_reverse_iterator  rbegin() const noexcept { return reverse_iterator(first_free); }
+		reverse_iterator        rend() noexcept { return reverse_iterator(element); }
+		const_reverse_iterator  rend() const noexcept { return reverse_iterator(element); }
 
-		//const_iterator          cbegin() noexcept;
-		//const_iterator          cend() noexcept;
-		//const_reverse_iterator  crbegin() const noexcept;
-		//const_reverse_iterator  crend() const noexcept;
+		const_iterator          cbegin() noexcept { return element; }
+		const_iterator          cend() noexcept { return first_free; }
+		const_reverse_iterator  crbegin() const noexcept { return reverse_iterator(first_free); }
+		const_reverse_iterator  crend() const noexcept { return reverse_iterator(element); }
 
 		//// capacity:
 		size_type size() const noexcept { return (first_free - element); }
@@ -117,7 +147,11 @@ namespace arsSTL {
 		iterator erase(const_iterator position) { return erase(position, position + 1); }
 		iterator erase(const_iterator first, const_iterator last);
 		void     swap(deque<T, Allocator>&);
-		void     clear() noexcept;
+		void     clear() noexcept {
+			erase(begin(), end());
+			map_alloc.deallocate(map, map_sz);
+			init_aux(0, T());
+		}
 
 	private:
 		//some auxiliary functions
@@ -264,17 +298,14 @@ namespace arsSTL {
 		return begin() + off;
 	}
 
-	template<typename T,typename Allocator>
-	void deque<T, Allocator>::clear() {
-		erase(begin(), end());
-		map_alloc.deallocate(map, map_sz);
-		inix_aux(0, T());
-	}
-
-	/*template<typename T, typename Allocator>
+	template<typename T, typename Allocator>
 	void deque<T, Allocator>::shrink_to_fit() {
-		
-	}*/
+		if ((first_free.cur - first_free.first) + (element.last - element.cur + 1) < chunk_sz(sizeof(T))) {
+			deque tem(begin(), end());
+			clear();
+			swap(tem);
+		}
+	}
 	
 	//modifiers clear and swap
 
@@ -413,6 +444,51 @@ namespace arsSTL {
 		}
 	}
 
+
+	//some non-member functions
+	template<typename T,typename Allocator>
+	bool operator==(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs) {
+		if (lhs.size() != rhs.size())
+			return false;
+		for (size_t i = 0; i < lhs.size(); ++i)
+			if (rhs[i] != lhs[i])
+				return false;
+		return true;
+	}
+
+	template<typename T, typename Allocator>
+	bool operator!=(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs){
+		return !(lhs == rhs);
+	}
+
+	template<typename T,typename Allocator>
+	bool operator<(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs) {
+		size_t i;
+		for (i = 0; i < lhs.size() && i < rhs.size(); ++i) {
+			if (lhs[i] < rhs[i])
+				return true;
+			else if (lhs[i]>rhs[i])
+				return false;
+		}
+		if (i == lhs.size())
+			return true;
+		return false;
+	}
+
+	template<typename T, typename Allocator>
+	bool operator>(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs) {
+		return rhs < lhs;
+	}
+
+	template<typename T, typename Allocator>
+	bool operator<=(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs) {
+		return !(lhs>rhs);
+	}
+
+	template<typename T, typename Allocator>
+	bool operator>=(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs) {
+		return !(lhs<rhs);
+	}
 
 }
 
