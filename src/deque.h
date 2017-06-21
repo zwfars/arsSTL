@@ -26,18 +26,30 @@ namespace arsSTL {
 		using map_pointer = T**;
 
 		// construct/copy/destroy:
-		explicit deque(const Allocator& = Allocator()): val_alloc(Allocator()) { init_aux(0, T()); }
+		explicit deque(const Allocator& = Allocator()) : val_alloc(Allocator()) { init_aux(0, T()); }
 		explicit deque(size_type n) { init_aux(n, T()); }
 		deque(size_type n, const T& value, const Allocator& = Allocator());
-		//template <class InputIterator>
-		//deque(InputIterator first, InputIterator last, const Allocator& = Allocator());
-		//deque(const deque<T, Allocator>& x);
-		//deque(deque&&);
+		template <class InputIterator>
+		deque(InputIterator first, InputIterator last, const Allocator& = Allocator()) :val_allo(Allocator()) {
+			init_aux(0, T());
+			insert(begin(), first, last);
+		}
+		deque(const deque<T, Allocator>& x) {
+			init_aux(0, T());
+			insert(begin(), x.begin(), x.end());
+		}
+		deque(deque&& x) {
+			clear();
+			swap(*this, x);
+		}
 		//deque(const deque&, const Allocator&);
 		//deque(deque&&, const Allocator&);
 		//deque(initializer_list<T>, const Allocator& = Allocator());
 
-		//~deque();
+		~deque() { 
+			erase(begin(), end());
+			map_alloc.deallocate(map, map_sz);
+		}
 		//deque<T, Allocator>& operator=(const deque<T, Allocator>& x);
 		//deque<T, Allocator>& operator=(deque<T, Allocator>&& x);
 		//deque& operator=(initializer_list<T>);
@@ -45,13 +57,13 @@ namespace arsSTL {
 		//void assign(InputIterator first, InputIterator last);
 		//void assign(size_type n, const T& t);
 		//void assign(initializer_list<T>);
-		//allocator_type get_allocator() const noexcept;
+		allocator_type get_allocator() const noexcept { return val_alloc; }
 
 		//// iterators:
 		iterator                begin() noexcept { return element; }
-		//const_iterator          begin() const noexcept;
+		const_iterator          begin() const noexcept { return element; }
 		iterator                end() noexcept { return first_free; }
-		//const_iterator          end() const noexcept;
+		const_iterator          end() const noexcept { return first_free; }
 
 		//reverse_iterator        rbegin() noexcept;
 		//const_reverse_iterator  rbegin() const noexcept;
@@ -65,53 +77,60 @@ namespace arsSTL {
 
 		//// capacity:
 		size_type size() const noexcept { return (first_free - element); }
-		//size_type max_size() const noexcept;
-		//void      resize(size_type sz);
-		//void      resize(size_type sz, const T& c);
-		//void      shrink_to_fit();
-		//bool      empty() const noexcept;
+		size_type max_size() const noexcept { return size_type(-1) / sizeof(T); }
+		void      resize(size_type sz) { resize(sz, T()); }
+		void      resize(size_type sz, const T& c);
+		void      shrink_to_fit();
+		bool      empty() const noexcept { return size() == 0; }
 
 		//// element access:
 		reference       operator[](size_type n) { return *(begin() + n); }
-		//const_reference operator[](size_type n) const;
-		//reference       at(size_type n);
-		//const_reference at(size_type n) const;
-		//reference       front();
-		//const_reference front() const;
-		//reference       back();
-		//const_reference back() const;
+		const_reference operator[](size_type n) const { return *(begin() + n); }
+		reference       at(size_type n) { return *(begin() + n); }
+		const_reference at(size_type n) const { return *(begin() + n); }
+		reference       front() {return *element; }
+		const_reference front() const { return *element; }
+		reference       back() { return *(first_free - 1); }
+		const_reference back() const { return *(first_free - 1); }
 
 		//// modifiers:
 		template <class... Args> void emplace_front(Args&&... args);
 		template <class... Args> void emplace_back(Args&&... args);
-		//template <class... Args> iterator emplace(const_iterator position, Args&&... args);
+		template <class... Args> iterator emplace(const_iterator position, Args&&... args);
 
 		void push_front(const T& x) { emplace_front(x); }
 		void push_front(T&& x) { emplace_front(std::forward<T>(x)); }
 		void push_back(const T& x) { emplace_back(x); }
 		void push_back(T&& x) { emplace_back(std::forward<T>(x)); }
 
-		//iterator insert(const_iterator position, const T& x);
-		//iterator insert(const_iterator position, T&& x);
-		//iterator insert(const_iterator position, size_type n, const T& x);
-		//template <class InputIterator>
-		//iterator insert(const_iterator position, InputIterator first,
-		//	InputIterator last);
-		//iterator insert(const_iterator position, initializer_list<T>);
+		iterator insert(const_iterator position, const T& x) { return emplace(position, x); }
+		iterator insert(const_iterator position, T&& x) { return emplace(position, std::forward<T>(x)); }
+		iterator insert(const_iterator position, size_type n, const T& x);
+		template <class InputIterator>
+		iterator insert(const_iterator position, InputIterator first,
+			InputIterator last);
+		iterator insert(const_iterator position, std::initializer_list<T> x) { insert(position, x.begin(), x.end()); }
 
-		//void pop_front();
-		//void pop_back();
+		void pop_front();
+		void pop_back();
 
-		//iterator erase(const_iterator position);
-		//iterator erase(const_iterator first, const_iterator last);
-		//void     swap(deque<T, Allocator>&);
-		//void     clear() noexcept;
+		iterator erase(const_iterator position) { return erase(position, position + 1); }
+		iterator erase(const_iterator first, const_iterator last);
+		void     swap(deque<T, Allocator>&);
+		void     clear() noexcept;
 
+	private:
 		//some auxiliary functions
 		void init_aux(size_type n, const T& value);
 		void map_front_aux(size_type added_num = 1);
 		void map_back_aux(size_type added_num = 1);
 		void map_added_aux(size_type added_num,bool added_front);
+		void rotate_aux(iterator first, iterator new_first, iterator last);
+		void reverse_aux(iterator first, iterator last);
+		template<typename InputIterator>
+		void insert_aux(const_iterator position, InputIterator first, InputIterator last, std::false_type);
+		template<typename InputIterator>
+		void insert_aux(const_iterator position, InputIterator first, InputIterator last, std::true_type);
 		
 		// class members
 	private:
@@ -129,7 +148,16 @@ namespace arsSTL {
 		init_aux(n, value);
 	}
 
-	//modifiers
+	//capacity 
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::resize(size_type n, const T& c) {
+		while (size() < n)
+			emplace_back(c);
+		while (size() > n)
+			pop_back();
+	}
+
+	//modifiers  emplace and insert
 	template<typename T,typename Allocator>
 	template <class... Args> 
 	void deque<T, Allocator>::emplace_front(Args&&... args) {
@@ -149,17 +177,116 @@ namespace arsSTL {
 	template <class... Args>
 	void deque<T, Allocator>::emplace_back(Args&&...args) {
 		difference_type off = element.cur - element.first;
-		if (first_free.cur == first_free.last - 1) {
+		if (first_free.cur == first_free.last-1) {
 			map_back_aux();
 			auto tem = first_free.parent + 1;
 			*tem = val_alloc.allocate(chunk_sz(sizeof(T)));
+			val_alloc.construct(first_free.cur, (args)...);
 			first_free.set_node(tem);
 			first_free.cur = first_free.first;
 		}
+		else
+			val_alloc.construct(first_free.cur++, (args)...);
 		element.cur = element.first + off;
-		val_alloc.construct(first_free.cur++, (args)...);
 	}
 
+	template<typename T, typename Allocator>
+	template <class... Args>
+	typename deque<T, Allocator>::iterator deque<T, Allocator>::emplace(const_iterator position, Args&&... args) {
+		auto pos = position - element;
+		if ((pos << 1) < size()) {
+			emplace_front((args)...);
+			rotate_aux(begin(), begin() + 1, begin() + pos + 1);
+		}
+		else {
+			emplace_back((args)...);
+			rotate_aux(begin() + pos, end() - 1, end());
+		}
+		return begin() + pos;
+	}
+
+	template<typename T,typename Allocator>
+	typename deque<T, Allocator>::iterator deque<T,Allocator>::insert(const_iterator position, size_type n, const T& value) {
+		auto off = position - element;
+		for (size_type i = 0; i < n; i++)
+			emplace(position, value);
+		return begin() + off;
+	}
+
+	template<typename T,typename Allocator>
+	template<typename InputIterator>
+	typename deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator position,InputIterator first,InputIterator last) {
+		auto off = position - begin();
+		insert_aux(position, first, last, std::is_integral<InputIterator>::type());
+		return begin() + off;
+	}
+
+	//modifiers pop and erase
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::pop_front() {
+		val_alloc.destroy(element.cur);
+		if (element.cur == element.last - 1) {
+			val_alloc.deallocate(element.first, chunk_sz(sizeof(T)));
+			element.set_node(element.parent + 1);
+			element.cur = element.first;
+		}
+		else {
+			++element.cur;
+		}
+		
+	}
+
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::pop_back() {
+		if (first_free.cur == first_free.first) {
+			// have deallcated the memory
+			val_alloc.deallocate(first_free.first, chunk_sz(sizeof(T)));
+			first_free.set_node(first_free.parent - 1);
+			first_free.cur = first_free.last;
+		}
+		val_alloc.destroy(--first_free.cur);
+	}
+
+	template<typename T,typename Allocator>
+	typename deque<T, Allocator>::iterator deque<T, Allocator>::erase(const_iterator first, const_iterator last) {
+		size_type cnt = last - first;
+		size_type off = first - begin();
+		if (first - begin() > last - end()) {
+			rotate_aux(first.remove_const(), last.remove_const(), end());
+			for (auto i = 1; i <= cnt; i++)
+				pop_back();
+		}
+		else {
+			rotate_aux(begin(), first.remove_const(), last.remove_const());
+			for (auto i = 1; i <= cnt; i++)
+				pop_front();
+		}
+		return begin() + off;
+	}
+
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::clear() {
+		erase(begin(), end());
+		map_alloc.deallocate(map, map_sz);
+		inix_aux(0, T());
+	}
+
+	/*template<typename T, typename Allocator>
+	void deque<T, Allocator>::shrink_to_fit() {
+		
+	}*/
+	
+	//modifiers clear and swap
+
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::swap(deque<T, Allocator>& other) {
+		if (*this != other) {
+			std::swap(element, other.element);
+			std::swap(first_free, other.first_free);
+			std::swap(map, other.map);
+			std::swap(map_sz, other.map_sz);
+		}
+	}
 
 	//some auxiliary functions
 	template<typename T,typename Allocator>
@@ -217,7 +344,7 @@ namespace arsSTL {
 			size_type next_sz = map_sz + std::max(map_sz, cur_sz) + 2;
 			map_pointer next_map = map_alloc.allocate(next_sz);
 			cur_elem = next_map + (next_sz - cur_sz) / 2 + (added_front ? added_num : 0);
-			uninitialized_copy(element.parent, first_free.parent + 1, next_map);
+			uninitialized_copy(element.parent, first_free.parent + 1, cur_elem);
 			map_alloc.deallocate(map, last_sz);
 			map = next_map;
 			map_sz = next_sz;
@@ -225,6 +352,67 @@ namespace arsSTL {
 		element.set_node(cur_elem);
 		first_free.set_node(cur_elem + last_sz - 1);
 	}
+
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::rotate_aux(iterator first, iterator new_first, iterator last) {
+		reverse_aux(first, new_first);
+		reverse_aux(new_first, last);
+		reverse_aux(first, last);
+	}
+	
+	template<typename T,typename Allocator>
+	void deque<T, Allocator>::reverse_aux(iterator first, iterator last) {
+		--last;
+		while (first < last) {
+			std::swap(*first, *last);
+			++first;
+			--last;
+		}
+	}
+
+	template<typename T,typename Allocator>
+	template<typename InputIterator>
+	void deque<T, Allocator>::insert_aux(const_iterator position, InputIterator first, InputIterator last, std::false_type) {
+		size_type cnt = 0;                 //calculate the number of insertion
+		size_type off = position - begin();
+		if ((off << 1) < size()) {
+			while (1) {
+				--last;
+				emplace_front(*last);
+				++cnt;
+				if (first == last)
+					break;
+			}
+			rotate_aux(begin(), begin() + cnt, begin() + cnt + off);
+		}
+		else {
+			size_type old_sz = size();
+			while (first != last) {
+				emplace_back(*first);
+				++first;
+				++cnt;
+			}
+			rotate_aux(begin() + off, begin() + old_sz, end());
+		}
+	}
+
+	template<typename T, typename Allocator>
+	template<typename InputIterator>
+	void deque<T, Allocator>::insert_aux(const_iterator position, InputIterator first, InputIterator last, std::true_type) {
+		size_type off = position - begin();
+		if ((off << 1) < size()) {
+			for (size_type i = 1; i <= first; i++)
+				emplace_front(last);
+			rotate_aux(begin(), begin() + first, begin() + first + off);
+		}
+		else {
+			size_type old_sz = size();
+			for (size_type i = 1; i <= first; i++)
+				emplace_back(last);
+			rotate_aux(begin() + off, begin() + old_sz, end());
+		}
+	}
+
 
 }
 
