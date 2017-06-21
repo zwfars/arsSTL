@@ -24,7 +24,7 @@ namespace arsSTL {
 		template <class Alloc> stack(const stack& x, const Alloc& a) : c(x.c, a) {}
 		template <class Alloc> stack(stack&& x, const Alloc& a) : c(std::move(x.c), a) {}
 
-		Container get_container() { return c; }
+		Container get_container() const { return c; }
 		bool empty() const {
 			return c.empty();
 		}
