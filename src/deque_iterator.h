@@ -65,7 +65,7 @@ namespace arsSTL {
 			else {
 				//int total = -n - (cur - first);
 				if (cur - first >= -n)
-					cur = first + n;
+					cur = cur + n;
 				else {
 					size_type total = -n - (cur - first);
 					set_node(parent - 1 - total / chunk_sz(sizeof(T)));
