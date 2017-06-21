@@ -489,6 +489,11 @@ namespace arsSTL {
 	bool operator>=(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs) {
 		return !(lhs<rhs);
 	}
+	
+	template<typename T,typename Allocator>
+	void swap(const deque<T, Allocator>& lhs, const deque<T, Allocator>& rhs) {
+		lhs.swap(rhs);
+	}
 
 }
 
