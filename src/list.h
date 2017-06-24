@@ -441,6 +441,7 @@ namespace arsSTL {
 		first_free = alloc.allocate(1);
 		first_free->next = first_free;
 		first_free->prev = first_free;
+		sz = 0;
 	}
 
 	template<typename T,typename Allocator>
