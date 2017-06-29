@@ -55,13 +55,6 @@ namespace arsSTL {
 			return cur->val;
 		}
 
-
-		// friend function 
-		template<typename T>
-		friend bool operator==(list_iterator<T>& lhs, list_iterator<T>& rhs) { return lhs.cur == rhs.cur; }
-		template<typename T>
-		friend bool operator!=(list_iterator<T>& lhs, list_iterator<T>& rhs) { return !(lhs == rhs); }
-		
 	};
 	template<typename T>
 	struct list_const_iterator {
@@ -97,16 +90,31 @@ namespace arsSTL {
 			return old;
 		}
 
-		const T& operator*() {
+		reference operator*() {
 			return cur->val;
 		}
 
-		//template<typename T>
-		friend bool operator==(list_iterator<T>& lhs, list_iterator<T>& rhs) { return lhs.cur == rhs.cur; }
-		//template<typename T>
-		friend bool operator!=(list_iterator<T>& lhs, list_iterator<T>& rhs) { return !(lhs == rhs); }
 
 	};
+
+	// non-member function 
+	template<typename T>
+	bool operator==(const list_iterator<T>& lhs, const list_iterator<T>& rhs) { 
+		return lhs.cur == rhs.cur; 
+	}
+	template<typename T>
+	bool operator!=(const list_iterator<T>& lhs, const list_iterator<T>& rhs) { 
+		return !(lhs == rhs); 
+	}
+
+	template<typename T>
+	bool operator==(const list_const_iterator<T>& lhs, const list_const_iterator<T>& rhs) { 
+		return lhs.cur == rhs.cur; 
+	}
+	template<typename T>
+	bool operator!=(const list_const_iterator<T>& lhs, const list_const_iterator<T>& rhs) { 
+		return !(lhs == rhs); 
+	}
 }
 
 
