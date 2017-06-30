@@ -24,11 +24,10 @@ namespace arsSTL {
 		using const_reference = const T&;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
-		using local_iterator = typename arsSTL::list<T>::iterator;
-		using const_local_iterator = typename arsSTL::list<T>::const_iterator;
+		using local_iterator = typename list<T>::iterator;
+		using const_local_iterator = typename list<T>::const_iterator;
 		using iterator = hash_table_iterator<T, Key, Extract_key, Hash, KeyEqual, Allocator>;
 		using const_iterator = iterator;
-		//using hash_alloc = typename Allocator::template rebind<arsSTL::list<T>>::other;
 
 		const static size_type prime_sz = 28;
 		const static size_type prime[prime_sz];
@@ -37,10 +36,8 @@ namespace arsSTL {
 		//construct function
 		hash_table():sz(0), maximum_load_factor(1.0),buckets(get_next_prime(0)){}
 
-
 		hash_table(hasher xhf,Extract_key xget_key,KeyEqual xequal,size_type n,Allocator a): sz(n),max_load_factor(1.0), 
-				hash_func(xhf),get_key(xget_key),equal(xequal),alloc(a),buckets(get_next_prime(n)){}
-
+				hash_func(xhf),get_key(xget_key),key_equal(xequal),alloc(a),buckets(get_next_prime(n)){}
 
 	public:
 		// size and capacity
@@ -81,7 +78,8 @@ namespace arsSTL {
 		}
 
 		//// modifiers
-		template <class... Args> arsSTL::pair<iterator, bool> emplace(Args&&... args) {
+		template <class... Args> 
+		pair<iterator, bool> emplace(Args&&... args) {
 			if (load_factor() > max_load_factor()) {
 				rehash(bucket_count() + 1);
 			}
@@ -91,12 +89,13 @@ namespace arsSTL {
 				size_type pos = bucket(get_key(tem));
 				buckets[pos].emplace_back(get_key(tem));
 				auto tt = --buckets[pos].end();
-				return arsSTL::pair<iterator, bool>(iterator(&buckets, pos, tt),true);
+				return pair<iterator, bool>(iterator(&buckets, pos, tt),true);
 			}
 			else {
-				return arsSTL::pair<iterator, bool>(find(get_key(tem)),false);
+				return pair<iterator, bool>(find(get_key(tem)),false);
 			}
 		}
+
 		template <class... Args> 
 		iterator emplace_hint(const_iterator position, Args&&... args) {
 			if (load_factor() > maximum_load_factor) {
@@ -123,43 +122,104 @@ namespace arsSTL {
 		}
 		
 		iterator insert(const_iterator hint, const value_type& obj) {
-			return emplace_hint()
+			return emplace_hint(hint, obj);
 		}
-		//iterator insert(const_iterator hint, value_type&& obj);
-		//template <class InputIterator> void insert(InputIterator first, InputIterator last);
-		//void insert(initializer_list<value_type>);
+		
+		iterator insert(const_iterator hint, value_type&& obj) {
+			return emplace_hint(hint, std::forward<value_type>(obj));
+		}
+		template <class InputIterator> 
+		
+		void insert(InputIterator first, InputIterator last) {
+			while (first != last)
+				insert(*first++);
+		}
+		
+		void insert(std::initializer_list<value_type> x) {
+			insert(x.begin(), x.end());
+		}
 
-		//iterator erase(const_iterator position);
-		//size_type erase(const key_type& k);
-		//iterator erase(const_iterator first, const_iterator last);
-		//void clear() noexcept;
+		iterator erase(const_iterator position) {
+			size_type idx = position.index;
+			auto next_iter = ++position;
+			if (buckets[idx].begin() != buckets[idx].end()) {
+				buckets[idx].erase(position.cur);
+				--sz;
+			}
+			return next_iter;
+		}
+		
+		size_type erase(const key_type& k) {
+			size_type pos = bucket(k);
+			size_type cnt = 0;
+			for (auto iter = buckets[pos].begin(); iter != buckets[pos].end();) {
+				if (hash_equal(get_key(*iter), k)) {
+					iter = buckets[pos].erase(iter);
+					++cnt;
+				}
+				else
+					++iter;
+			}
+			return cnt;
+		}
 
-		//void swap(unordered_set&);
+		iterator erase(const_iterator first, const_iterator last) {
+			auto tem_iter = first;
+			while (tem_iter!=last)
+				tem_iter = erase(tem_iter);
+			return tem_iter;
+		}
+		
+		void clear() noexcept {
+			erase(begin(), end());
+		}
 
-		//// observers
-		//hasher hash_function() const;
-		//key_equal key_eq() const;
+		void swap(hash_table& x) {
+			swap(buckets, x.buckets);
+			std::swap(maximum_load_factor, x.maximum_load_factor);
+			std::swap(sz, x.sz);
+		}
 
+		
 		//// lookup
 		iterator       find(const key_type& k) {
 			size_type pos = bucket(k);
 			for (auto iter = buckets[pos].begin(); iter != buckets[pos].end(); ++iter) {
-				if (equal(*iter, k))
+				if (hash_equal(*iter, k))
 					return iterator(&buckets, pos, iter);
 			}
 			return end();
 		}
-		//const_iterator find(const key_type& k) const;
-		//size_type count(const key_type& k) const;
-		//std::pair<iterator, iterator> equal_range(const key_type& k);
-		//std::pair<const_iterator, const_iterator> equal_range(const key_type& k) const;
+		
+		const_iterator find(const key_type& k) const {
+			return const_cast<hash_table*>(this)->find(k);
+		}
+		
+		size_type count(const key_type& k) const {
+			if (find(k) == end())
+				return 0;
+			return 1;
+		}
+		pair<iterator, iterator> equal_range(const key_type& k) {
+			auto tem_iter = find(k);
+			if (find(k) == end())
+				return pair<iterator, iterator>(end(), end());
+			return pair<iterator, iterator>(tem_iter, ++tem_iter);
+			
+		}
+
+		pair<const_iterator, const_iterator> equal_range(const key_type& k) const {
+			return const_cast<hash_table*>(this)->equal_range(k);
+		}
 
 		//// bucket interface
 		size_type bucket_count() const noexcept {
 			return buckets.size();
 		}
 
-		//size_type max_bucket_count() const noexcept;
+		size_type max_bucket_count() const noexcept {
+			return prime[prime_sz - 1];
+		}
 		size_type bucket_size(size_type n) const {
 			return buckets[n].size();
 		}
@@ -199,7 +259,9 @@ namespace arsSTL {
 			size_type num = get_next_prime(n);
 			buckets.resize(n);
 		}
-		//void reserve(size_type n);
+		void reserve(size_type n) {
+			buckets.reserve(n);
+		}
 
 
 		// observers
@@ -207,7 +269,7 @@ namespace arsSTL {
 			return hash_func;
 		}
 		key_equal key_eq() const {
-			return equal;
+			return hash_equal;
 		}
 	private:
 		//aux function
@@ -215,13 +277,14 @@ namespace arsSTL {
 			for (auto i = 0; i < prime_sz; ++i)
 				if (prime[i]>n)
 					return prime[i];
+			return 0;
 		}
 	private:
 		hasher hash_func;
 		Extract_key get_key;
-		KeyEqual equal;
+		KeyEqual hash_equal;
 		Allocator alloc;
-		arsSTL::vector<arsSTL::list<T,Allocator>> buckets;
+		vector<list<T,Allocator>> buckets;
 		size_type sz;
 		float maximum_load_factor;
 	};
@@ -234,4 +297,3 @@ namespace arsSTL {
 		201326611u, 402653189u, 805306457u,1610612741u, 3221225473u, 4294967291u,
 	};
 }
-#endif
