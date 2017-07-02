@@ -36,10 +36,14 @@ namespace arsSTL {
 		//construct function
 		hash_table():sz(0), maximum_load_factor(1.0),buckets(get_next_prime(0)){}
 
-		hash_table(hasher xhf,Extract_key xget_key,KeyEqual xequal,size_type n,Allocator a): sz(n),max_load_factor(1.0), 
-				hash_func(xhf),get_key(xget_key),key_equal(xequal),alloc(a),buckets(get_next_prime(n)){}
-
+		hash_table(hasher xhf,Extract_key xget_key,KeyEqual xequal,size_type n,Allocator a): sz(0),maximum_load_factor(1.0), 
+				hash_func(xhf),get_key(xget_key),hash_equal(xequal),alloc(a),buckets(get_next_prime(n)){}
+		~hash_table() = default;
 	public:
+		Allocator get_allocator() const {
+			return alloc;
+		}
+
 		// size and capacity
 		bool      empty() const noexcept {
 			return sz == 0;
@@ -141,9 +145,10 @@ namespace arsSTL {
 
 		iterator erase(const_iterator position) {
 			size_type idx = position.index;
+			auto haha = position;
 			auto next_iter = ++position;
 			if (buckets[idx].begin() != buckets[idx].end()) {
-				buckets[idx].erase(position.cur);
+				buckets[idx].erase(haha.cur);
 				--sz;
 			}
 			return next_iter;
@@ -156,6 +161,7 @@ namespace arsSTL {
 				if (hash_equal(get_key(*iter), k)) {
 					iter = buckets[pos].erase(iter);
 					++cnt;
+					--sz;
 				}
 				else
 					++iter;
@@ -297,3 +303,4 @@ namespace arsSTL {
 		201326611u, 402653189u, 805306457u,1610612741u, 3221225473u, 4294967291u,
 	};
 }
+#endif
