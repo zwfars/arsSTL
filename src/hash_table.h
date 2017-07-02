@@ -35,7 +35,7 @@ namespace arsSTL {
 	public:
 		//construct function
 		hash_table():sz(0), maximum_load_factor(1.0),buckets(get_next_prime(0)){}
-
+		hash_table(size_type n) :sz(0), maximum_load_factor(1.0), buckets(get_next_prime(n)) {}
 		hash_table(hasher xhf,Extract_key xget_key,KeyEqual xequal,size_type n,Allocator a): sz(0),maximum_load_factor(1.0), 
 				hash_func(xhf),get_key(xget_key),hash_equal(xequal),alloc(a),buckets(get_next_prime(n)){}
 		~hash_table() = default;
@@ -72,7 +72,7 @@ namespace arsSTL {
 			return iterator(&buckets, tem, buckets[tem].end());
 		}
 		const_iterator end() const noexcept {
-			const_cast<hash_table*>(this)->begin();
+			return const_cast<hash_table*>(this)->end();
 		}
 		const_iterator cbegin() const noexcept {
 			return begin();
@@ -135,8 +135,10 @@ namespace arsSTL {
 		template <class InputIterator> 
 		
 		void insert(InputIterator first, InputIterator last) {
-			while (first != last)
-				insert(*first++);
+			while (first != last) {
+				insert(*first);
+				++first;
+			}
 		}
 		
 		void insert(std::initializer_list<value_type> x) {
@@ -181,7 +183,7 @@ namespace arsSTL {
 		}
 
 		void swap(hash_table& x) {
-			swap(buckets, x.buckets);
+			buckets.swap(x.buckets);
 			std::swap(maximum_load_factor, x.maximum_load_factor);
 			std::swap(sz, x.sz);
 		}
@@ -262,8 +264,13 @@ namespace arsSTL {
 			maximum_load_factor = z;
 		}
 		void rehash(size_type n) {
+			if (n <= bucket_count())
+				return;
 			size_type num = get_next_prime(n);
-			buckets.resize(n);
+			hash_table other;
+			for (auto iter = begin(); iter != end(); ++iter)
+				other.insert(*iter);
+			swap(other);
 		}
 		void reserve(size_type n) {
 			buckets.reserve(n);
