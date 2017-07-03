@@ -1,13 +1,13 @@
-#ifndef UNORDERED_SET
-#define UNORDERED_SET
+#ifndef UNORDERED_SET_H
+#define UNORDERED_SET_H
 
 #include<allocators>
 #include"hash_table.h"
 
 namespace arsSTL {
 
-	template<typename T>
 	struct get_key {
+		template<typename T>
 		T operator()(T x) {
 			return x;
 		}
@@ -30,7 +30,7 @@ namespace arsSTL {
 		using const_reference =  typename allocator_type::const_reference;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
-		using Container = hash_table<Key, Key, get_key<Key>,Hash, Pred, Allocator>;
+		using Container = hash_table<Key, Key, get_key,Hash, Pred, Allocator>;
 
 		// the syntax
 		using iterator =  typename Container::iterator;
@@ -40,10 +40,10 @@ namespace arsSTL {
 
 		// construct/destroy/copy
 		explicit unordered_set(size_type buck_num = 0, const hasher& hf = hasher(), const key_equal& eql = key_equal(),
-			const allocator_type& a = allocator_type()) :ht(hf, get_key<Key>(), eql, buck_num, a) {}
+			const allocator_type& a = allocator_type()) :ht(hf, get_key(), eql, buck_num, a) {}
 		template <class InputIterator>
 		unordered_set(InputIterator f, InputIterator l,size_type buck_num=0,const hasher& hf = hasher(),
-			const key_equal& eql = key_equal(), const allocator_type& a = allocator_type()) : ht(hf, get_key<Key>(), eql, buck_num, a){
+			const key_equal& eql = key_equal(), const allocator_type& a = allocator_type()) : ht(hf, get_key(), eql, buck_num, a){
 			insert(f, l);
 		}
 		unordered_set(const unordered_set& x){
@@ -52,17 +52,17 @@ namespace arsSTL {
 		unordered_set(unordered_set&& x) {
 			swap(x);
 		}
-		explicit unordered_set(const Allocator& a) :ht(hasher(), get_key<Key>(), key_equal(), 0, a) {}
-		unordered_set(const unordered_set& x, const Allocator& a) :ht(hasher(), get_key<Key>(), key_equal(), 0, a) {
+		explicit unordered_set(const Allocator& a) :ht(hasher(), get_key(), key_equal(), 0, a) {}
+		unordered_set(const unordered_set& x, const Allocator& a) :ht(hasher(), get_key(), key_equal(), 0, a) {
 			insert(x.begin(), x.end());
 		}
-		unordered_set(unordered_set&& x, const Allocator& a) :ht(hasher(), get_key<Key>(), key_equal(), 0, a) {
+		unordered_set(unordered_set&& x, const Allocator& a) :ht(hasher(), get_key(), key_equal(), 0, a) {
 			swap(x);
 		}
 		
 		unordered_set(std::initializer_list<value_type> x, size_type buck_num = 0, const hasher& hf = hasher(),
 			const key_equal& eql = key_equal(), const allocator_type& a = allocator_type()) :
-			ht(hf, get_key<Key>(), eql, buck_num, a) {
+			ht(hf, get_key(), eql, buck_num, a) {
 			insert(x.begin(), x.end());
 		}
 
