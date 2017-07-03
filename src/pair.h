@@ -9,19 +9,26 @@ namespace arsSTL{
 		
 		constexpr pair() :first(), second() {}
 		constexpr pair(const T1& val1, const T2& val2) : first(val1), second(val2) {}
-		pair(const pair&) = default;
+		pair(const pair& x) :first(x.first), second(x.second) {}
 		pair(const pair&& x) :first(std::move(x.first)), second(std::move(x.second)) {}
 		template<typename other1,typename other2>
 		pair(const pair<other1, other2>& x) :first(x.first), seconde(x.second) {}
-		
-		//some function
-		pair make_pair(T1&& val1, T2&& val2) {
-			return pair(std::forward<T1>(val1), std::forward<T2>(val2));
-		}
 		//member
 		first_type first;
 		second_type second;
+
+		pair& operator=(const pair& x) {
+			first = x.first;
+			second = x.second;
+			return *this;
+		}
 	};
+
+	//some function
+	template<typename T1, typename T2>
+	pair<T1,T2> make_pair(T1&& val1, T2&& val2) {
+		return pair<T1,T2>(std::forward<T1>(val1), std::forward<T2>(val2));
+	}
 
 }
 
