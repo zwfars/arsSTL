@@ -33,7 +33,7 @@ namespace arsSTL {
 		using Container = hash_table<Key, Key, get_key,Hash, Pred, Allocator>;
 
 		// the syntax
-		using iterator =  typename Container::iterator;
+		using iterator =  typename Container::const_iterator;
 		using const_iterator =  typename Container::const_iterator;
 		using local_iterator =  typename Container::local_iterator;
 		using const_local_iterator = typename Container::const_local_iterator;
