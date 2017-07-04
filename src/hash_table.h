@@ -20,14 +20,13 @@ namespace arsSTL {
 		using key_equal = KeyEqual;
 		using pointer = T *;
 		using const_pointer = const T*;
-		using reference = T&;
 		using const_reference = const T&;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using local_iterator = typename list<T>::iterator;
 		using const_local_iterator = typename list<T>::const_iterator;
-		using iterator = hash_table_iterator<T, Key, Extract_key, Hash, KeyEqual, Allocator>;
-		using const_iterator = iterator;
+		using iterator = hash_table_iterator<T, T&,T*,Key, Extract_key, Hash, KeyEqual, Allocator>;
+		using const_iterator = hash_table_iterator<T,const T&,const T*, Key, Extract_key, Hash, KeyEqual, Allocator>;
 
 		const static size_type prime_sz = 28;
 		const static size_type prime[prime_sz];
@@ -88,15 +87,16 @@ namespace arsSTL {
 				rehash(bucket_count() + 1);
 			}
 			T tem(std::forward<Args>(args)...);
-			if (find(get_key(tem)) == end()) {
+			auto tem_iter = find(get_key(tem));
+			if ( tem_iter== end()) {
 				++sz;
 				size_type pos = bucket(get_key(tem));
-				buckets[pos].emplace_back(get_key(tem));
+				buckets[pos].emplace_back(tem);
 				auto tt = --buckets[pos].end();
 				return pair<iterator, bool>(iterator(&buckets, pos, tt),true);
 			}
 			else {
-				return pair<iterator, bool>(find(get_key(tem)),false);
+				return pair<iterator, bool>(tem_iter,false);
 			}
 		}
 
@@ -193,7 +193,7 @@ namespace arsSTL {
 		iterator       find(const key_type& k) {
 			size_type pos = bucket(k);
 			for (auto iter = buckets[pos].begin(); iter != buckets[pos].end(); ++iter) {
-				if (hash_equal(*iter, k))
+				if (hash_equal(get_key(*iter), k))
 					return iterator(&buckets, pos, iter);
 			}
 			return end();
