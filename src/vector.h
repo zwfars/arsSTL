@@ -74,17 +74,17 @@ namespace arsSTL {
 
 		// element access:
 		reference       operator[](size_type n) { return *(begin() + n); }
-		const_reference operator[](size_type n) const { return *(cbegin() + n); }
+		const_reference operator[](size_type n) const { return *(begin() + n); }
 		reference       at(size_type n) { return *(begin() + n); }
-		const_reference at(size_type n) const { return *(cbegin() + n); }
+		const_reference at(size_type n) const { return *(begin() + n); }
 		reference       front() { return *begin(); }
-		const_reference front() const { return *cbegin(); }
+		const_reference front() const { return *begin(); }
 		reference       back() { return *(end() - 1); }
 		const_reference back() const { return *(cend() - 1); }
 
 		////data access
 		T*       data() noexcept { return begin(); }
-		const T* data() const noexcept { return cbegin(); }
+		const T* data() const noexcept { return begin(); }
 
 		//// modifiers:
 		template <class... Args> void emplace_back(Args&&... args) { emp_aux((args)...); }
@@ -104,13 +104,6 @@ namespace arsSTL {
 		iterator erase(const_iterator first, const_iterator last);
 		void     swap(vector<T, Allocator>&);
 		void     clear() noexcept { erase(begin(), end()) };
-
-		// == and !=
-	public:
-		template<class T, class Allocator>
-		friend bool operator == (const vector<T, Allocator>&, const vector<T, Allocator>&);
-		template<class T, class Allocator>
-		friend bool operator != (const vector<T, Allocator>&, const vector<T, Allocator>&);
 
 		// some helper functions
 	private:
@@ -379,31 +372,6 @@ namespace arsSTL {
 		}
 	}
 
-
-
-	// friend functions 
-	template<class T, class Allocator>
-	bool operator == (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
-		if (x1.size() != x2.size())
-			return false;
-		auto tem1 = x1.begin();
-		auto tem2 = x2.begin();
-		while (tem1 != x1.end()) {
-			if (*tem1 != *tem2)
-				return false;
-			tem1++;
-			tem2++;
-		}
-		return true;
-	}
-
-	template<class T, class Allocator>
-	bool operator != (const vector<T, Allocator>& x1, const vector<T, Allocator>& x2) {
-		return !(x1 == x2);
-	}
-
-
-
 	// vector auxiliary function 
 	template<typename T, typename Allocator>
 	template <class InputIterator>
@@ -539,5 +507,60 @@ namespace arsSTL {
 			cap = len + element;
 		}
 	}
+
+	//some non-member function
+	template<typename T, typename Allocator>
+	void swap(const vector<T, Allocator>& x,const vector<T,Allocator>& y) {
+		std::swap(y.first_free, x.first_free);
+		std::swap(y.element, x.element);
+		std::swap(y.cap, x.cap);
+	}
+
+	template <class T, class Allocator>
+	bool operator==(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+		if (x.size() != y.size())
+			return 0;
+		else{
+			int len = x.size();
+			for (int i = 0; i < len; ++i)
+				if (x[i] != y[i])
+					return 0;
+		}
+		return 1;
+	}
+	
+	template <class T, class Allocator>
+	bool operator< (const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+		for (int i = 0; i < x.size() && i < y.size(); ++i) {
+			if (x[i] < y[i])
+				return 1;
+			else if (x[i]>y[i])
+				return 0;
+		}
+		if (x.size() < y.size())
+			return 1;
+		return 0;
+	}
+	
+	template <class T, class Allocator>
+	bool operator!=(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+		return !(x == y);
+	}
+	
+	template <class T, class Allocator>
+	bool operator> (const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+		return y < x;
+	}
+	
+	template <class T, class Allocator>
+	bool operator>=(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+		return !(x < y);
+	}
+	
+	template <class T, class Allocator>
+	bool operator<=(const vector<T, Allocator>& x, const vector<T, Allocator>& y) {
+		return !(x > y);
+	}
+
 }
 #endif
