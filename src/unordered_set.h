@@ -71,10 +71,12 @@ namespace arsSTL {
 		unordered_set& operator=(const unordered_set& x) {
 			clear();
 			insert(x.begin(), x.end());
+			return *this;
 		}
 		unordered_set& operator=(unordered_set&& x) {
 			clear();
-			swap(x)
+			swap(x);
+			return *this;
 		}
 		unordered_set& operator=(std::initializer_list<value_type> x) {
 			clear();
@@ -236,9 +238,26 @@ namespace arsSTL {
 		void reserve(size_type n) {
 			ht.reserve(n);
 		}
+		const Container& get_constainer() const{
+			return ht;
+		}
 		private:
 			Container ht;
 	};
+
+	template <class Key, class Hash,class Pred , class Allocator>
+	bool operator==(const unordered_set<Key, Hash, Pred, Allocator>&lhs, const unordered_set<Key, Hash, Pred, Allocator>&rhs) {
+		return lhs.get_constainer() == rhs.get_constainer();
+	}
+	template <class Key, class Hash, class Pred, class Allocator>
+	bool operator!=(const unordered_set<Key, Hash, Pred, Allocator>&lhs, const unordered_set<Key, Hash, Pred, Allocator>&rhs) {
+		return !(lhs==rhs);
+	}
+	template <class Key, class Hash, class Pred, class Allocator>
+	void swap(const unordered_set<Key, Hash, Pred, Allocator>&lhs, const unordered_set<Key, Hash, Pred, Allocator>&rhs) {
+		lhs.swap(rhs);
+	}
+
 
 
 }
