@@ -57,7 +57,7 @@ namespace arsSTL {
 			swap(c, q.c);
 		}
 		// aux funtion
-		Container get_container() const {
+		const Container& get_container() const {
 			return c;
 		}
 	};
