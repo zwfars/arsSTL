@@ -184,8 +184,8 @@ namespace arsSTL {
 					sink(0);
 			}
 		}
-		void swap(priority_queue& q) noexcept(noexcept(swap(c, q.c))
-			&& noexcept(swap(comp, q.comp))) {
+		void swap(priority_queue& q) noexcept(noexcept(std::swap(c, q.c))
+			&& noexcept(std::swap(comp, q.comp))) {
 			using std::swap;
 			swap(c, q.c);
 			swap(comp, q.comp);
@@ -215,6 +215,14 @@ namespace arsSTL {
 			}
 		}
 	};
+
+	//some non-member function
+	template <class T, class Container, class Compare>
+	void swap(priority_queue<T, Container, Compare>& x,
+		priority_queue<T, Container, Compare>& y)
+		noexcept(noexcept(x.swap(y))) {
+		x.swap(y);
+	}
 }
 
 #endif
