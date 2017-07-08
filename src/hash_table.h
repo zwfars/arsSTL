@@ -147,8 +147,9 @@ namespace arsSTL {
 
 		iterator erase(const_iterator position) {
 			size_type idx = position.index;
-			auto haha = position;
-			auto next_iter = ++position;
+			iterator pos(position.bucket,position.index, position.cur);
+			auto haha = pos;
+			auto next_iter = ++pos;
 			if (buckets[idx].begin() != buckets[idx].end()) {
 				buckets[idx].erase(haha.cur);
 				--sz;
@@ -172,8 +173,9 @@ namespace arsSTL {
 		}
 
 		iterator erase(const_iterator first, const_iterator last) {
-			auto tem_iter = first;
-			while (tem_iter!=last)
+			iterator tem_iter(first.bucket, first.index, first.cur);
+			iterator tem_last(last.bucket, last.index,last.cur);
+			while (tem_iter!=tem_last)
 				tem_iter = erase(tem_iter);
 			return tem_iter;
 		}
@@ -301,6 +303,35 @@ namespace arsSTL {
 		size_type sz;
 		float maximum_load_factor;
 	};
+
+	template<typename T, typename Key, typename Extract_key, typename Hash, typename KeyEqual, typename Allocator>
+	bool operator==(const hash_table<T, Key, Extract_key, Hash, KeyEqual, Allocator>& lhs, 
+		const hash_table<T, Key, Extract_key, Hash, KeyEqual, Allocator>& rhs) {
+		if (lhs.size() != rhs.size())
+			return 0;
+		auto iter1 = lhs.begin();
+		auto iter2 = rhs.begin();
+		while (iter1 != lhs.end()) {
+			if (*iter1!= *iter2)
+				return 0;
+			++iter1;
+			++iter2;
+		}
+		return 1;
+	}
+
+	template<typename T, typename Key, typename Extract_key, typename Hash, typename KeyEqual, typename Allocator>
+	bool operator!=(const hash_table<T, Key, Extract_key, Hash, KeyEqual, Allocator>& lhs,
+		const hash_table<T, Key, Extract_key, Hash, KeyEqual, Allocator>& rhs) {
+		return !(lhs == rhs);
+	}
+
+	template<typename T, typename Key, typename Extract_key, typename Hash, typename KeyEqual, typename Allocator>
+	void swap(const hash_table<T, Key, Extract_key, Hash, KeyEqual, Allocator>& lhs,
+		const hash_table<T, Key, Extract_key, Hash, KeyEqual, Allocator>& rhs) {
+		lhs.swap(rhs);
+	}
+
 
 	template<typename T, typename Key, typename Extract_key, typename Hash, typename KeyEqual, typename Allocator>
 	const size_t hash_table<T, Key, Extract_key, Hash, KeyEqual, Allocator>::prime[prime_sz] = {
