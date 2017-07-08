@@ -259,10 +259,29 @@ namespace arsSTL {
 		void reserve(size_type n) {
 			ht.reserve(n);
 		}
+		
+		const Container& get_container() const{
+			return ht;
+		}
 		private:
 			Container ht;
 
 	};
+
+	template <class Key, class T, class Hash,class Pred, class Allocator>
+	bool operator==(const unordered_map<Key, T, Hash, Pred, Allocator>&lhs, const unordered_map<Key, T, Hash, Pred, Allocator>& rhs) {
+		return lhs.get_container() == rhs.get_container();
+	}
+
+	template <class Key, class T, class Hash, class Pred, class Allocator>
+	bool operator!=(const unordered_map<Key, T, Hash, Pred, Allocator>&lhs, const unordered_map<Key, T, Hash, Pred, Allocator>& rhs) {
+		return !(lhs == rhs);
+	}
+	template <class Key, class T, class Hash, class Pred, class Allocator>
+	void swap(const unordered_map<Key, T, Hash, Pred, Allocator>&lhs, const unordered_map<Key, T, Hash, Pred, Allocator>& rhs) {
+		lhs.swap(rhs);
+	}
+
 }
 
 #endif
