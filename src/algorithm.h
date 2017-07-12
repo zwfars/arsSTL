@@ -4,13 +4,19 @@
 namespace arsSTL {
 	namespace std
 	{
-		//// non-modifying sequence operations:
-		//template <class InputIterator, class Predicate>
-		//bool all_of(InputIterator first, InputIterator last, Predicate pred);
-		//template <class InputIterator, class Predicate>
-		//bool any_of(InputIterator first, InputIterator last, Predicate pred);
-		//template <class InputIterator, class Predicate>
-		//bool none_of(InputIterator first, InputIterator last, Predicate pred);
+		// non-modifying sequence operations:
+		template <class InputIterator, class Predicate>
+		bool all_of(InputIterator first, InputIterator last, Predicate pred) {
+			return find_if_not(first, last, pred) == last;
+		}
+		template <class InputIterator, class Predicate>
+		bool any_of(InputIterator first, InputIterator last, Predicate pred) {
+			return find_if(first, last, pred) != last;
+		}
+		template <class InputIterator, class Predicate>
+		bool none_of(InputIterator first, InputIterator last, Predicate pred) {
+			return find_if(first, last, pred) == last;
+		}
 
 		template<class InputIterator, class Function>
 		Function for_each(InputIterator first, InputIterator last, Function f) {
@@ -45,15 +51,15 @@ namespace arsSTL {
 		}
 
 		//template<class ForwardIterator1, class ForwardIterator2>
-		//ForwardIterator1
-		//	find_end(ForwardIterator1 first1, ForwardIterator1 last1,
-		//		ForwardIterator2 first2, ForwardIterator2 last2);
-		//template<class ForwardIterator1, class ForwardIterator2,
-		//class BinaryPredicate>
-		//	ForwardIterator1
-		//	find_end(ForwardIterator1 first1, ForwardIterator1 last1,
-		//		ForwardIterator2 first2, ForwardIterator2 last2,
-		//		BinaryPredicate pred);
+		//ForwardIterator1 find_end(ForwardIterator1 first1, ForwardIterator1 last1,
+		//	ForwardIterator2 first2, ForwardIterator2 last2) {
+
+		//}
+		//template<class ForwardIterator1, class ForwardIterator2,class BinaryPredicate>
+		//ForwardIterator1 find_end(ForwardIterator1 first1, ForwardIterator1 last1,
+		//	ForwardIterator2 first2, ForwardIterator2 last2, BinaryPredicate pred) {
+
+		//}
 
 		//template<class InputIterator, class ForwardIterator>
 		//InputIterator
@@ -104,16 +110,26 @@ namespace arsSTL {
 		//	bool is_permutation(ForwardIterator1 first1, ForwardIterator1 last1,
 		//		ForwardIterator2 first2, BinaryPredicate pred);
 
-		//template<class ForwardIterator1, class ForwardIterator2>
-		//ForwardIterator1 search(
-		//	ForwardIterator1 first1, ForwardIterator1 last1,
-		//	ForwardIterator2 first2, ForwardIterator2 last2);
-		//template<class ForwardIterator1, class ForwardIterator2,
-		//class BinaryPredicate>
-		//	ForwardIterator1 search(
-		//		ForwardIterator1 first1, ForwardIterator1 last1,
-		//		ForwardIterator2 first2, ForwardIterator2 last2,
-		//		BinaryPredicate pred);
+		template<class ForwardIterator1, class ForwardIterator2>
+		ForwardIterator1 search(ForwardIterator1 first1, ForwardIterator1 last1,
+			ForwardIterator2 first2, ForwardIterator2 last2) {
+			return search(first1, last1, first2, last2, [](ForwardIterator1 iter1, ForwardIterator2 iter2) {return *iter1 == *iter2; })
+		}
+		template<class ForwardIterator1, class ForwardIterator2,class BinaryPredicate>
+		ForwardIterator1 search(ForwardIterator1 first1, ForwardIterator1 last1,
+			ForwardIterator2 first2, ForwardIterator2 last2, BinaryPredicate pred) {
+			for (;; ++first1) {
+				auto cur1 = first1;
+				for (auto cur2 = first2;;++cur1,++cur2) {
+					if (cur2 == last2)
+						return first1;
+					if (cur1 == last1)
+						return last1;
+					if (!pred(*cur1, *cur2))
+						break;
+				}
+			}
+		}
 
 		//template<class ForwardIterator, class Size, class T>
 		//ForwardIterator search_n(ForwardIterator first, ForwardIterator last,
